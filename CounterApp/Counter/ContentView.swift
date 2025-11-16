@@ -31,7 +31,7 @@ struct CounterView: View {
                             width: Self.counterSize.width,
                             height: Self.counterSize.height
                         )
-                    SlidingLabel(value: viewModel.counter)
+                    SlidingLabel(value: $viewModel.counter)
                         .font(.system(size: 42, weight: .bold))
                         .foregroundStyle(.primaryBackground)
                 }

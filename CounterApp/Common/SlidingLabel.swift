@@ -7,14 +7,14 @@
 
 import SwiftUI
 
-private struct OneDirectionSlidingLabel: View {
+private struct OneDirectionSlidingLabel<T>: View where T: Comparable & LosslessStringConvertible {
     enum SlidingDirection { case bottomInTopOut, topInBottomOut }
     
-    var text: String
-    var direction: SlidingDirection
+    @Binding var value: T
+    let direction: SlidingDirection
     
     var body: some View {
-        Text(text)
+        Text(String(value))
             .id(UUID()) // Makes SwiftUI see it as a new view
             .transition(
                 .asymmetric(
@@ -22,7 +22,7 @@ private struct OneDirectionSlidingLabel: View {
                     removal: removalTransition
                 )
             )
-            .animation(.easeInOut(duration: 0.25), value: text)
+            .animation(.easeInOut(duration: 0.25), value: String(value))
     }
     
     var insertionTransition: AnyTransition {
@@ -37,15 +37,15 @@ private struct OneDirectionSlidingLabel: View {
 }
 
 struct SlidingLabel<T>: View where T: Comparable & LosslessStringConvertible {
-    var value: T
+    @Binding var value: T
     @State private var topInBottomOutLabelOpacity: Double = 1
     @State private var bottomIntopOutLabelOpacity: Double = 0
     
     var body: some View {
         ZStack {
-            OneDirectionSlidingLabel(text: String(value), direction: .topInBottomOut)
+            OneDirectionSlidingLabel(value: $value, direction: .topInBottomOut)
                 .opacity(topInBottomOutLabelOpacity)
-            OneDirectionSlidingLabel(text: String(value), direction: .bottomInTopOut)
+            OneDirectionSlidingLabel(value: $value, direction: .bottomInTopOut)
                 .opacity(bottomIntopOutLabelOpacity)
         }
         .onChange(of: value) { oldValue, newValue in

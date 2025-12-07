@@ -2,8 +2,6 @@
 //  CounterView.swift
 //  CounterApp
 //
-//  Created by Workspace on 15/11/2025.
-//
 
 import SwiftUI
 
@@ -15,8 +13,9 @@ struct CounterView: View {
         height: buttonSize.width * 2 + Self.spacing
     )
     
-    @State private var viewModel = CounterViewModel()
-    @State private var currentCounter: UInt = 0
+    var viewModel = CounterViewModel()
+    @State private var currentCounter: Int = 0
+    @State private var decreasing = false
     @State private var showErrorAnimation = 0
     
     var body: some View {
@@ -32,14 +31,16 @@ struct CounterView: View {
                             width: Self.counterSize.width,
                             height: Self.counterSize.height
                         )
-                    SlidingLabel(value: $currentCounter)
+                    Text(currentCounter, format: .number)
+                        .contentTransition(.numericText(countsDown: decreasing))
                         .font(.system(size: 42, weight: .bold))
                         .foregroundStyle(.primaryBackground)
                         .frame(width: Self.counterSize.width)
-                        .shake(showErrorAnimation)
-                        .onChange(of: viewModel.counter, { _, newValue in
+                        .shake(trigger: showErrorAnimation, duration: 0.6)
+                        .onChange(of: viewModel.counter, { oldValue, newValue in
+                            decreasing = oldValue > newValue
                             withAnimation {
-                                self.currentCounter = newValue
+                                currentCounter = newValue
                             }
                         })
                 }
@@ -103,7 +104,6 @@ struct CounterView: View {
     private func triggerErrorAnimation() {
         withAnimation {
             showErrorAnimation &+= 1
-            DispatchQueue.main.async { showErrorAnimation = 0 }
         }
     }
 }

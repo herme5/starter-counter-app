@@ -2,22 +2,19 @@
 //  CounterViewModel.swift
 //  CounterApp
 //
-//  Created by Workspace on 15/11/2025.
-//
 
 import Foundation
-import Combine
 
 @Observable
 class CounterViewModel {
     enum CounterError: Error { case maximumOverflow, minimumOverflow }
-    private let counterStep: UInt = 1
-    private let counterMin: UInt = 0
-    private let counterMax: UInt = 9999
+    private let counterStep: Int = 10
+    private let counterMin: Int = 0
+    private let counterMax: Int = 100
     private let resetDurationSec = 0.6
     
-    var counter: UInt = 0
-    private(set) var overflowError = PublishedEvent<CounterError>()
+    var counter: Int = 0
+    private(set) var overflowError = Signal<CounterError>()
     private var resetWork: Task<Void, Never>?
     
     func increment() {
@@ -27,7 +24,7 @@ class CounterViewModel {
             
             // Check overflow
             guard counter < counterMax else {
-                sendError(.minimumOverflow)
+                overflowError.send(.maximumOverflow)
                 return
             }
             
@@ -44,7 +41,7 @@ class CounterViewModel {
             
             // Check overflow
             guard counter > counterMin else {
-                sendError(.minimumOverflow)
+                overflowError.send(.minimumOverflow)
                 return
             }
             
@@ -59,11 +56,14 @@ class CounterViewModel {
         guard resetWork == nil else { return }
         
         // Abort if the current value is already set to reset value
-        guard counter != .min else { return }
+        guard counter > counterMin else { return }
+        
+        // Clamp to 9 to force animation to occur on the last digit
+        let resetStep = min(counterStep, 9)
         
         // Compute distance from current to reset value, guaranteed to non-zero
-        let distance = Double(counter / counterStep).rounded(.up)
-        let intervalSecs = max(0.001, resetDurationSec / distance)
+        let distance = Double(counter / resetStep).rounded(.up)
+        let intervalSecs = max(0.006, resetDurationSec / distance)
         
         resetWork = Task { [weak self] in
             guard let self else { return }
@@ -72,7 +72,7 @@ class CounterViewModel {
             do {
                 // Progressively decrement counter to reset value
                 while counter > counterMin {
-                    counter -= min(counterStep, counter)
+                    counter -= min(resetStep, counter)
                     try Task.checkCancellation()
                     try await Task.sleep(for: .seconds(intervalSecs))
                 }
@@ -83,38 +83,16 @@ class CounterViewModel {
         }
     }
     
-    private func sendError(_ error: CounterError) {
-        overflowError.send(error)
-    }
-    
     private func withYield(_ completion: @escaping () -> Void) {
-        // If there was cancelled pending reset...
+        // Cancel any pending reset
         resetWork?.cancel()
         
         Task {
-            // Give chance to jump to 0 before decrementation
+            // Give chance to jump to 0
             await Task.yield()
             
             // We are sure the counter is not in intermediate states
             completion()
         }
-    }
-}
-
-struct PublishedEvent<T>: Publisher {
-    typealias Output = T
-    typealias Failure = Never
-    private var subject = PassthroughSubject<T, Never>()
-    func send(_ input: T) { subject.send(input) }
-    func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, T == S.Input { subject.receive(subscriber: subscriber) }
-}
-
-struct Signal<T>: Equatable {
-    static func == (lhs: Signal<T>, rhs: Signal<T>) -> Bool { lhs.id == rhs.id }
-    private var id = UUID()
-    var value: T?
-    mutating func send(_ input: T) {
-        id = UUID()
-        value = input
     }
 }

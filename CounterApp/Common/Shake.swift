@@ -20,7 +20,6 @@ extension View {
     func shake<T: BinaryInteger>(trigger: T, duration: TimeInterval = 0.15) -> some View {
         self.modifier(
             Shake(animatableData: CGFloat(trigger))
-                // .animation(.easeInOut(duration: duration))
         )
     }
 }

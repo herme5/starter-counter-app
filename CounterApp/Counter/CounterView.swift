@@ -6,12 +6,14 @@
 import SwiftUI
 
 struct CounterView: View {
-    static let spacing = CGFloat(12)
-    static let buttonSize = CGSize(width: 80, height: 80)
-    static let counterSize = CGSize(
-        width: buttonSize.width * 2 + Self.spacing,
-        height: buttonSize.width * 2 + Self.spacing
-    )
+    private let spacing = CGFloat(12)
+    private let buttonSize = CGSize(width: 80, height: 80)
+    private var counterSize: CGSize {
+        CGSize(
+            width: buttonSize.width * 2 + spacing,
+            height: buttonSize.width * 2 + spacing
+        )
+    }
     
     var viewModel = CounterViewModel()
     @State private var currentCounter: Int = 0
@@ -19,49 +21,73 @@ struct CounterView: View {
     @State private var showErrorAnimation = 0
     
     var body: some View {
-        ZStack {
-            Color.primaryBackground // Background
-                .ignoresSafeArea()
+        GeometryReader { geo in
+            let isPortait = geo.size.height > geo.size.width
             
-            VStack(spacing: Self.spacing) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .foregroundStyle(.primaryForeground)
-                        .frame(
-                            width: Self.counterSize.width,
-                            height: Self.counterSize.height
-                        )
-                    Text(currentCounter, format: .number)
-                        .contentTransition(.numericText(countsDown: decreasing))
-                        .font(.system(size: 42, weight: .bold))
-                        .foregroundStyle(.primaryBackground)
-                        .frame(width: Self.counterSize.width)
-                        .shake(trigger: showErrorAnimation, duration: 0.6)
-                        .onChange(of: viewModel.counter, { oldValue, newValue in
-                            decreasing = oldValue > newValue
-                            withAnimation {
-                                currentCounter = newValue
-                            }
-                        })
+            ZStack {
+                // Background
+                Color.primaryBackground
+                    .ignoresSafeArea()
+                
+                if isPortait {
+                    // Portrait layout
+                    VStack(spacing: spacing) {
+                        counterBlock
+                        controlBlock
+                    }
+                } else {
+                    // Landscape layout
+                    HStack(spacing: spacing) {
+                        counterBlock
+                        controlBlock
+                    }
                 }
-                HStack(spacing: Self.spacing) {
-                    controlButton(
-                        action: viewModel.increment,
-                        imageSystemName: "plus.square.fill"
-                    )
-                    controlButton(
-                        action: viewModel.decrement,
-                        imageSystemName: "minus.square.fill"
-                    )
-                }
-                fullWidthButton(
-                    action: viewModel.reset,
-                    label: "⌫ Reset"
-                )
             }
         }
-        .onReceive(viewModel.overflowError) { error in
-            triggerErrorAnimation()
+    }
+    
+    private var counterBlock: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .foregroundStyle(.primaryForeground)
+                .frame(
+                    width: counterSize.width,
+                    height: counterSize.height
+                )
+            Text(currentCounter, format: .number)
+                .contentTransition(.numericText(countsDown: decreasing))
+                .font(.system(size: 42, weight: .bold))
+                .foregroundStyle(.primaryBackground)
+                .frame(width: counterSize.width)
+                .shake(trigger: showErrorAnimation, duration: 0.6)
+                .onChange(of: viewModel.counter, { oldValue, newValue in
+                    decreasing = oldValue > newValue
+                    withAnimation {
+                        currentCounter = newValue
+                    }
+                })
+                .onReceive(viewModel.overflowError) { error in
+                    triggerErrorAnimation()
+                }
+        }
+    }
+    
+    private var controlBlock: some View {
+        VStack(spacing: spacing) {
+            HStack(spacing: spacing) {
+                controlButton(
+                    action: viewModel.increment,
+                    imageSystemName: "plus.square.fill"
+                )
+                controlButton(
+                    action: viewModel.decrement,
+                    imageSystemName: "minus.square.fill"
+                )
+            }
+            fullWidthButton(
+                action: viewModel.reset,
+                label: "⌫ Reset"
+            )
         }
     }
     
@@ -74,8 +100,8 @@ struct CounterView: View {
                 .resizable()
         }
         .frame(
-            width: Self.buttonSize.width,
-            height: Self.buttonSize.height
+            width: buttonSize.width,
+            height: buttonSize.height
         )
         .foregroundStyle(.primaryForeground)
     }
@@ -86,12 +112,11 @@ struct CounterView: View {
     ) -> some View {
         Button(action: action) {
             Text(label)
-                .padding(12)
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.primaryBackground)
                 .frame(
-                    width: Self.counterSize.width,
-                    height: Self.buttonSize.height
+                    width: counterSize.width,
+                    height: buttonSize.height
                 )
                 .background(
                     .primaryForeground,

@@ -11,7 +11,7 @@ struct Signal<T>: Publisher, Identifiable {
     typealias Failure = Never
     
     var id = UUID()
-    private var subject = PassthroughSubject<T, Never>()
+    private let subject = PassthroughSubject<T, Never>()
     
     mutating func send(_ input: T) {
         subject.send(input)

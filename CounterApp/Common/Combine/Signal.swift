@@ -1,5 +1,5 @@
 //
-//  SlidingLabel.swift
+//  Signal.swift
 //  CounterApp
 //
 

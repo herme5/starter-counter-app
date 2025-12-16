@@ -45,7 +45,7 @@ struct CounterView: View {
             }
         }
     }
-    
+
     private var counterBlock: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 12)

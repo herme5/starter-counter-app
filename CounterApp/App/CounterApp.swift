@@ -1,14 +1,12 @@
 //
-//  CounterAppApp.swift
+//  CounterApp.swift
 //  CounterApp
-//
-//  Created by Workspace on 15/11/2025.
 //
 
 import SwiftUI
 
 @main
-struct CounterAppApp: App {
+struct CounterApp: App {
     var body: some Scene {
         WindowGroup {
             CounterView()

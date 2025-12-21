@@ -3,6 +3,7 @@
 //  CounterApp
 //
 
+import Combine
 import SwiftUI
 
 struct CounterView: View {
@@ -14,33 +15,52 @@ struct CounterView: View {
             height: buttonSize.width * 2 + spacing
         )
     }
-    
-    var viewModel = CounterViewModel()
+
+    @StateObject var viewModel: CounterViewModel
     @State private var currentCounter: Int = 0
     @State private var decreasing = false
     @State private var showErrorAnimation = 0
-    
+    @State private var showSettings = false
+
+    var cancellables = Set<AnyCancellable>()
+
     var body: some View {
         GeometryReader { geo in
             let isPortait = geo.size.height > geo.size.width
-            
-            ZStack {
-                // Background
-                Color.primaryBackground
-                    .ignoresSafeArea()
-                
-                if isPortait {
-                    // Portrait layout
-                    VStack(spacing: spacing) {
-                        counterBlock
-                        controlBlock
+
+            NavigationStack {
+                ZStack {
+                    // Background
+                    Color.primaryBackground
+                        .ignoresSafeArea()
+
+                    if isPortait {
+                        // Portrait layout
+                        VStack(spacing: spacing) {
+                            counterBlock
+                            controlBlock
+                        }
+                    } else {
+                        // Landscape layout
+                        HStack(spacing: spacing) {
+                            counterBlock
+                            controlBlock
+                        }
                     }
-                } else {
-                    // Landscape layout
-                    HStack(spacing: spacing) {
-                        counterBlock
-                        controlBlock
+                }
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(action: { showSettings = true }) {
+                            Image(systemName: "gearshape.fill")
+                                .resizable()
+                                .frame(width: 32, height: 32)
+                        }
+                        .foregroundStyle(.primaryForeground)
                     }
+                    .sharedBackgroundVisibility(.hidden)
+                }
+                .sheet(isPresented: $showSettings) {
+                    SettingsView(viewModel: viewModel.makeSettingsViewModel())
                 }
             }
         }
@@ -71,7 +91,7 @@ struct CounterView: View {
                 }
         }
     }
-    
+
     private var controlBlock: some View {
         VStack(spacing: spacing) {
             HStack(spacing: spacing) {
@@ -90,7 +110,7 @@ struct CounterView: View {
             )
         }
     }
-    
+
     private func controlButton(
         action: @escaping () -> Void,
         imageSystemName: String
@@ -105,7 +125,7 @@ struct CounterView: View {
         )
         .foregroundStyle(.primaryForeground)
     }
-    
+
     private func fullWidthButton(
         action: @escaping () -> Void,
         label: String
@@ -125,7 +145,7 @@ struct CounterView: View {
         }
         .foregroundStyle(.primaryForeground)
     }
-    
+
     private func triggerErrorAnimation() {
         withAnimation {
             showErrorAnimation &+= 1
@@ -134,5 +154,6 @@ struct CounterView: View {
 }
 
 #Preview {
-    CounterView()
+    let appFactory = AppFactory()
+    CounterView(viewModel: appFactory.counterViewModel)
 }

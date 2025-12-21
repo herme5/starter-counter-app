@@ -11,13 +11,10 @@ extension UserDefaults {
         let encoded = try encoder.encode(codable)
         set(encoded, forKey: key)
     }
-    
+
     func codable<T: Codable>(forKey key: String) throws -> T? {
-        if let data = self.object(forKey: key) as? Data {
-            let decoder = JSONDecoder()
-            return try decoder.decode(T.self, from: data)
-        } else {
-            return nil
-        }
+        guard let data = object(forKey: key) as? Data else { return nil }
+        let decoder = JSONDecoder()
+        return try decoder.decode(T.self, from: data)
     }
 }

@@ -3,20 +3,26 @@
 //  CounterApp
 //
 
+import Combine
 import Foundation
 
-@Observable
-class CounterViewModel {
+class CounterViewModel: ObservableObject {
     enum CounterError: Error { case maximumOverflow, minimumOverflow }
-    private let counterStep: Int = 10
-    private let counterMin: Int = 0
-    private let counterMax: Int = 100
+    private var counterStep: Int { settings.counterStep }
+    private var counterMin: Int { settings.counterMin }
+    private var counterMax: Int { settings.counterMax }
     private let resetDurationSec = 0.6
-    
-    var counter: Int = 0
-    private(set) var overflowError = Signal<CounterError>()
+    private let settingsStore: SettingsStore
+
+    @Published var counter: Int = 0
+    @Published private var settings = Settings()
+    @Published private(set) var overflowError = Signal<CounterError>()
     private var resetWork: Task<Void, Never>?
-    
+
+    init(settingsStore: SettingsStore = SettingsStore()) {
+        self.settingsStore = settingsStore
+    }
+
     func increment() {
         // Yield for reset work before doing operations
         withYield { [weak self] in
@@ -76,6 +82,12 @@ class CounterViewModel {
                     try Task.checkCancellation()
                     try await Task.sleep(for: .seconds(intervalSecs))
                 }
+                // Progressively increment counter to reset value
+                while counter < counterMin {
+                    counter += min(resetStep, counter)
+                    try Task.checkCancellation()
+                    try await Task.sleep(for: .seconds(intervalSecs))
+                }
             } catch {
                 // Jump to reset value
                 counter = counterMin
@@ -94,5 +106,12 @@ class CounterViewModel {
             // We are sure the counter is not in intermediate states
             completion()
         }
+    }
+}
+
+extension CounterViewModel {
+
+    func makeSettingsViewModel() -> SettingsViewModel {
+        AppFactory.makeSettingsViewModel(settings: settingsStore.settings)
     }
 }

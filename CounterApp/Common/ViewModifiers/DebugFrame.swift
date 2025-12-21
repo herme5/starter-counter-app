@@ -8,7 +8,7 @@ import SwiftUI
 fileprivate enum DebugFrameColor {
     static var colorIndex = 0
     static var colors: [Color] = [.blue, .green, .orange, .red, .purple, .pink, .teal, .indigo, .brown].shuffled()
-    
+
     static func nextColor() -> Color {
         colorIndex = (colorIndex + 1) % colors.count
         if colorIndex == 0 { colors.shuffle() }
@@ -18,12 +18,12 @@ fileprivate enum DebugFrameColor {
 
 fileprivate struct HatchedRectangle: View {
     let color: Color
-    
+
     var body: some View {
         Canvas { context, size in
             let spacing: CGFloat = 8
             let lineWidth: CGFloat = 1
-            
+
             for x in stride(from: -size.height, to: size.width, by: spacing) {
                 var path = Path()
                 path.move(to: CGPoint(x: x, y: 0))
@@ -36,7 +36,7 @@ fileprivate struct HatchedRectangle: View {
 
 fileprivate struct DebugFrame: ViewModifier {
     let color: Color
-    
+
     func body(content: Content) -> some View {
         content
             .background {

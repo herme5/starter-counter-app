@@ -6,11 +6,7 @@
 import Foundation
 
 struct Settings: Codable {
-    let counterMin: Int
-    let counterMax: Int
-    let counterStep: Int
-}
-
-extension Settings {
-    static let `default` = Settings(counterMin: 0, counterMax: 10, counterStep: 1)
+    var counterMin: Int = 0
+    var counterMax: Int = 10
+    var counterStep: Int = 1
 }

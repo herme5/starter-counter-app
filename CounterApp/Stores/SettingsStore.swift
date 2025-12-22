@@ -7,7 +7,7 @@ import Combine
 import Foundation
 
 final class SettingsStore: ObservableObject {
-    @Published private(set) var settings: Settings {
+    @Published var settings: Settings {
         didSet { Self.save(settings) }
     }
 
@@ -23,6 +23,8 @@ final class SettingsStore: ObservableObject {
     }
 
     private static func save(_ settings: Settings) {
-        try? defaults.set(codable: settings, forKey: key)
+        if settings.isValid {
+            try? defaults.set(codable: settings, forKey: key)
+        }
     }
 }

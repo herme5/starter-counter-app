@@ -80,12 +80,15 @@ struct CounterView: View {
                 .foregroundStyle(.primaryBackground)
                 .frame(width: counterSize.width)
                 .shake(trigger: showErrorAnimation, duration: 0.6)
-                .onChange(of: viewModel.counter, { oldValue, newValue in
+                .onChange(
+                    of: viewModel.counter,
+                    initial: true
+                ) { oldValue, newValue in
                     decreasing = oldValue > newValue
                     withAnimation {
                         currentCounter = newValue
                     }
-                })
+                }
                 .onReceive(viewModel.overflowError) { error in
                     triggerErrorAnimation()
                 }

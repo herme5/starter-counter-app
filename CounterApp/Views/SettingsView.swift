@@ -7,9 +7,13 @@ import SwiftUI
 
 
 struct SettingsView: View {
-    @EnvironmentObject var settingsStore: SettingsStore
-    @State var viewModel: SettingsViewModel
+    enum Field: Hashable {
+        case minimumValue, maximumValue, incrementStep
+    }
+
+    @StateObject var viewModel: SettingsViewModel
     @State private var errorMessage: String?
+    @FocusState private var focusedField: Field?
 
     var body: some View {
         NavigationView {
@@ -19,20 +23,18 @@ struct SettingsView: View {
                     Section(
                         content: {
                             HStack {
-                                Text("Minimum Value")
-                                Spacer()
-                                TextField("Min", value: $viewModel.settings.counterMin, formatter: NumberFormatter())
-                                    .keyboardType(.decimalPad)
+                                Text("Minimum value")
+                                TextField("Min", value: $viewModel.counterMin, formatter: NumberFormatter())
+                                    .keyboardType(.numberPad)
                                     .multilineTextAlignment(.trailing)
-                                    .frame(width: 80)
+                                    .focused($focusedField, equals: .minimumValue)
                             }
                             HStack {
-                                Text("Maximum Value")
-                                Spacer()
-                                TextField("Max", value: $viewModel.settings.counterMax, formatter: NumberFormatter())
-                                    .keyboardType(.decimalPad)
+                                Text("Maximum value")
+                                TextField("Max", value: $viewModel.counterMax, formatter: NumberFormatter())
+                                    .keyboardType(.numberPad)
                                     .multilineTextAlignment(.trailing)
-                                    .frame(width: 80)
+                                    .focused($focusedField, equals: .maximumValue)
                             }
                         },
                         header: { Text("Range") },
@@ -42,18 +44,61 @@ struct SettingsView: View {
                     Section(
                         content: {
                             HStack {
-                                Text("Increment Step")
-                                Spacer()
-                                TextField("Step", value: $viewModel.settings.counterStep, formatter: NumberFormatter())
-                                    .keyboardType(.decimalPad)
+                                Text("Increment step")
+                                TextField("Step", value: $viewModel.counterStep, formatter: NumberFormatter())
+                                    .keyboardType(.numberPad)
                                     .multilineTextAlignment(.trailing)
-                                    .frame(width: 80)
+                                    .focused($focusedField, equals: .incrementStep)
                             }
                         },
                         header: { Text("Increment") }
                     )
                 }
                 .navigationTitle("Settings")
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+
+                        Button(action: {
+                            switch focusedField {
+                            case .minimumValue:
+                                viewModel.counterMin -= 1
+                            case .maximumValue:
+                                viewModel.counterMax -= 1
+                            case .incrementStep:
+                                viewModel.counterStep -= 1
+                            case nil: break
+                            }
+                        }) {
+                            Image(systemName: "minus.circle")
+                        }
+                        .foregroundStyle(.primaryForeground)
+
+                        Button(action: {
+                            switch focusedField {
+                            case .minimumValue:
+                                viewModel.counterMin += 1
+                            case .maximumValue:
+                                viewModel.counterMax += 1
+                            case .incrementStep:
+                                viewModel.counterStep += 1
+                            case nil: break
+                            }
+                        }) {
+                            Image(systemName: "plus.circle")
+                        }
+                        .foregroundStyle(.primaryForeground)
+
+                        Spacer()
+
+                        Button(action: {
+                            focusedField = nil
+                        }) {
+                            Image(systemName: "checkmark.circle")
+                        }
+                        .foregroundStyle(.primaryForeground)
+                    }
+                    .sharedBackgroundVisibility(.hidden)
+                }
                 .onChange(of: viewModel.errorMessage) { _, newValue in
                     withAnimation {
                         self.errorMessage = newValue.isEmpty ? nil : newValue
@@ -66,6 +111,6 @@ struct SettingsView: View {
 }
 
 #Preview {
-    let viewModel = SettingsViewModel()
-    SettingsView(viewModel: viewModel)
+    let appFactory = AppFactory()
+    SettingsView(viewModel: appFactory.settingsViewModel)
 }

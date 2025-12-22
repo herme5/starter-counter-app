@@ -8,19 +8,36 @@ import Foundation
 
 class CounterViewModel: ObservableObject {
     enum CounterError: Error { case maximumOverflow, minimumOverflow }
-    private var counterStep: Int { settings.counterStep }
-    private var counterMin: Int { settings.counterMin }
-    private var counterMax: Int { settings.counterMax }
     private let resetDurationSec = 0.6
     private let settingsStore: SettingsStore
 
-    @Published var counter: Int = 0
-    @Published private var settings = Settings()
+    @Published var counter: Int
     @Published private(set) var overflowError = Signal<CounterError>()
-    private var resetWork: Task<Void, Never>?
+    @Published private(set) var settings: Settings
 
-    init(settingsStore: SettingsStore = SettingsStore()) {
+    private var resetWork: Task<Void, Never>?
+    private var counterStep: Int { settingsStore.settings.counterStep }
+    private var counterMin: Int { settingsStore.settings.counterMin }
+    private var counterMax: Int { settingsStore.settings.counterMax }
+    private var cancellables = Set<AnyCancellable>()
+
+    init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
+        self.settings = settingsStore.settings
+        self.counter = settingsStore.settings.counterMin
+
+        settingsStore.$settings
+            .filter(\.isValid)
+            .sink(receiveValue: onNewSettingsReceived)
+            .store(in: &cancellables)
+    }
+
+    func onNewSettingsReceived(_ settings: Settings) {
+        self.settings = settings
+        withYield { [weak self] in
+            guard let self else { return }
+            counter = settings.counterMin
+        }
     }
 
     func increment() {
@@ -112,6 +129,6 @@ class CounterViewModel: ObservableObject {
 extension CounterViewModel {
 
     func makeSettingsViewModel() -> SettingsViewModel {
-        AppFactory.makeSettingsViewModel(settings: settingsStore.settings)
+        AppFactory.makeSettingsViewModel(settingsStore: settingsStore)
     }
 }

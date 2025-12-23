@@ -6,8 +6,8 @@
 import OSLog
 
 enum AppLogger {
-
     static let main: Logger = create(category: "main")
+    static let store: Logger = create(category: "store")
 }
 
 fileprivate extension AppLogger {

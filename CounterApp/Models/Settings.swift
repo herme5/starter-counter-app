@@ -10,7 +10,7 @@ enum SettingsError: Error {
     case invalidStep
 }
 
-struct Settings: Codable {
+struct Settings: Codable, Equatable {
     var counterMin: Int = 0
     var counterMax: Int = 10
     var counterStep: Int = 1

@@ -11,7 +11,7 @@ struct CounterApp: App {
 
     var body: some Scene {
         WindowGroup {
-            CounterView(viewModel: appFactory.counterViewModel)
+            MainView(viewModel: appFactory.mainViewModel)
         }
     }
 }

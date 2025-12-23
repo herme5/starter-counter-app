@@ -57,21 +57,7 @@ struct SettingsView: View {
                 .navigationTitle("Settings")
                 .toolbar {
                     ToolbarItemGroup(placement: .keyboard) {
-
-                        Button(action: {
-                            switch focusedField {
-                            case .minimumValue:
-                                viewModel.counterMin -= 1
-                            case .maximumValue:
-                                viewModel.counterMax -= 1
-                            case .incrementStep:
-                                viewModel.counterStep -= 1
-                            case nil: break
-                            }
-                        }) {
-                            Image(systemName: "minus.circle")
-                        }
-                        .foregroundStyle(.primaryForeground)
+                        Spacer()
 
                         Button(action: {
                             switch focusedField {
@@ -88,7 +74,20 @@ struct SettingsView: View {
                         }
                         .foregroundStyle(.primaryForeground)
 
-                        Spacer()
+                        Button(action: {
+                            switch focusedField {
+                            case .minimumValue:
+                                viewModel.counterMin -= 1
+                            case .maximumValue:
+                                viewModel.counterMax -= 1
+                            case .incrementStep:
+                                viewModel.counterStep -= 1
+                            case nil: break
+                            }
+                        }) {
+                            Image(systemName: "minus.circle")
+                        }
+                        .foregroundStyle(.primaryForeground)
 
                         Button(action: {
                             focusedField = nil

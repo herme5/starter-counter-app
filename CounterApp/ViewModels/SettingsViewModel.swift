@@ -5,7 +5,6 @@
 
 import Combine
 import Foundation
-internal import os
 
 class SettingsViewModel: ObservableObject {
     private let settingsStore: SettingsStore
@@ -25,14 +24,12 @@ class SettingsViewModel: ObservableObject {
     }
 
     func save() {
-        AppLogger.main.debug("save()")
         if let settings = validateInputs() {
             settingsStore.settings = settings
         }
     }
 
     func reset() {
-        AppLogger.main.debug("reset()")
         let settings = settingsStore.settings
         self.counterMin = settings.counterMin
         self.counterMax = settings.counterMax
@@ -40,7 +37,6 @@ class SettingsViewModel: ObservableObject {
     }
 
     private func validateInputs() -> Settings? {
-        AppLogger.main.debug("validateInputs()")
         let settings = Settings(
             counterMin: counterMin,
             counterMax: counterMax,

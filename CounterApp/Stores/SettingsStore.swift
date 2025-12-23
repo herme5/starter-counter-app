@@ -23,8 +23,12 @@ final class SettingsStore: ObservableObject {
     }
 
     private static func save(_ settings: Settings) {
-        if settings.isValid {
-            try? defaults.set(codable: settings, forKey: key)
+        if let oldSettings = load(), oldSettings == settings {
+            return
         }
+        if !settings.isValid {
+            return
+        }
+        try? defaults.set(codable: settings, forKey: key)
     }
 }

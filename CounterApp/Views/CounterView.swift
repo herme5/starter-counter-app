@@ -20,47 +20,26 @@ struct CounterView: View {
     @State private var currentCounter: Int = 0
     @State private var decreasing = false
     @State private var showErrorAnimation = 0
-    @State private var showSettings = false
 
     var cancellables = Set<AnyCancellable>()
 
     var body: some View {
         GeometryReader { geo in
-            let isPortait = geo.size.height > geo.size.width
+            let isPortait = geo.size.height >= geo.size.width
 
-            NavigationStack {
-                ZStack {
-                    // Background
-                    Color.primaryBackground
-                        .ignoresSafeArea()
+            ZStack {
+                Color.primaryBackground
 
-                    if isPortait {
-                        // Portrait layout
-                        VStack(spacing: spacing) {
-                            counterBlock
-                            controlBlock
-                        }
-                    } else {
-                        // Landscape layout
-                        HStack(spacing: spacing) {
-                            counterBlock
-                            controlBlock
-                        }
+                if isPortait {
+                    VStack(spacing: spacing) {
+                        counterBlock
+                        controlBlock
                     }
-                }
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(action: { showSettings = true }) {
-                            Image(systemName: "gearshape.fill")
-                                .resizable()
-                                .frame(width: 32, height: 32)
-                        }
-                        .foregroundStyle(.primaryForeground)
+                } else {
+                    HStack(spacing: spacing) {
+                        counterBlock
+                        controlBlock
                     }
-                    .sharedBackgroundVisibility(.hidden)
-                }
-                .sheet(isPresented: $showSettings) {
-                    SettingsView(viewModel: viewModel.makeSettingsViewModel())
                 }
             }
         }
@@ -156,7 +135,9 @@ struct CounterView: View {
     }
 }
 
-#Preview {
+#Preview(
+    traits: .fixedLayout(width: 400, height: 400)
+) {
     let appFactory = AppFactory()
     CounterView(viewModel: appFactory.counterViewModel)
 }

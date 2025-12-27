@@ -63,53 +63,59 @@ struct SettingsView: View {
             .animation(.default, value: viewModel.rangeErrorMessage)
             .animation(.default, value: viewModel.stepErrorMessage)
             .navigationTitle("Settings")
-            .toolbar { keyboardItemGroup }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    keyboardItemGroup
+                        .background(.bar.opacity(0.5), in: .capsule)
+                        .glassEffect()
+                        .padding(.bottom, 20)
+                }.sharedBackgroundVisibility(.hidden)
+            }
         }
     }
 
-    var keyboardItemGroup: ToolbarItemGroup<some View> {
-        ToolbarItemGroup(placement: .keyboard) {
-            HStack {
-                Spacer()
+    var keyboardItemGroup: some View {
+        HStack(spacing: 20) {
+            Spacer()
 
-                Button(action: {
-                    switch focusedField {
-                    case .minimumValue:
-                        viewModel.counterMin += 1
-                    case .maximumValue:
-                        viewModel.counterMax += 1
-                    case .incrementStep:
-                        viewModel.counterStep += 1
-                    case nil: break
-                    }
-                }) {
-                    Image(systemName: "plus.circle")
+            Button(action: {
+                switch focusedField {
+                case .minimumValue:
+                    viewModel.counterMin += 1
+                case .maximumValue:
+                    viewModel.counterMax += 1
+                case .incrementStep:
+                    viewModel.counterStep += 1
+                case nil: break
                 }
-                .foregroundStyle(.primaryForeground)
-
-                Button(action: {
-                    switch focusedField {
-                    case .minimumValue:
-                        viewModel.counterMin -= 1
-                    case .maximumValue:
-                        viewModel.counterMax -= 1
-                    case .incrementStep:
-                        viewModel.counterStep -= 1
-                    case nil: break
-                    }
-                }) {
-                    Image(systemName: "minus.circle")
-                }
-                .foregroundStyle(.primaryForeground)
-
-                Button(action: {
-                    focusedField = nil
-                }) {
-                    Image(systemName: "checkmark.circle")
-                }
-                .foregroundStyle(.primaryForeground)
+            }) {
+                Image(systemName: "plus")
             }
+            .foregroundStyle(.primaryForeground)
+
+            Button(action: {
+                switch focusedField {
+                case .minimumValue:
+                    viewModel.counterMin -= 1
+                case .maximumValue:
+                    viewModel.counterMax -= 1
+                case .incrementStep:
+                    viewModel.counterStep -= 1
+                case nil: break
+                }
+            }) {
+                Image(systemName: "minus")
+            }
+            .foregroundStyle(.primaryForeground)
+
+            Button(action: {
+                focusedField = nil
+            }) {
+                Image(systemName: "checkmark")
+            }
+            .foregroundStyle(.primaryForeground)
         }
+        .padding(8)
     }
 }
 

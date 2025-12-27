@@ -7,17 +7,18 @@ import Combine
 import Foundation
 
 class SettingsViewModel: ObservableObject {
-    private let settingsStore: SettingsStore
+    private let settingsStore: any Store<Settings>
 
     @Published var counterMin: Int { didSet { save() } }
     @Published var counterMax: Int { didSet { save() } }
     @Published var counterStep: Int { didSet { save() } }
-    @Published var errorMessage: String = ""
+    @Published var rangeErrorMessage: String?
+    @Published var stepErrorMessage: String?
 
-    init(settingsStore: SettingsStore) {
+    init(settingsStore: any Store<Settings>) {
         self.settingsStore = settingsStore
 
-        let settings = settingsStore.settings
+        let settings = settingsStore.object
         self.counterMin = settings.counterMin
         self.counterMax = settings.counterMax
         self.counterStep = settings.counterStep
@@ -25,12 +26,12 @@ class SettingsViewModel: ObservableObject {
 
     func save() {
         if let settings = validateInputs() {
-            settingsStore.settings = settings
+            settingsStore.object = settings
         }
     }
 
     func reset() {
-        let settings = settingsStore.settings
+        let settings = settingsStore.object
         self.counterMin = settings.counterMin
         self.counterMax = settings.counterMax
         self.counterStep = settings.counterStep
@@ -44,14 +45,15 @@ class SettingsViewModel: ObservableObject {
         )
         do {
             try settings.validate()
-            errorMessage = ""
+            rangeErrorMessage = nil
+            stepErrorMessage = nil
             return settings
         } catch {
             switch error {
             case .invalidRange:
-                errorMessage = "Minimum must be less than Maximum"
+                rangeErrorMessage = "Minimum must be less than Maximum"
             case .invalidStep:
-                errorMessage = "Step must be positive and non zero"
+                stepErrorMessage = "Step must be positive and non zero"
             }
             return nil
         }

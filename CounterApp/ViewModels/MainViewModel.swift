@@ -7,9 +7,9 @@ import Combine
 import Foundation
 
 class MainViewModel: ObservableObject {
-    private let settingsStore: SettingsStore
+    private let settingsStore: any Store<Settings>
 
-    init(settingsStore: SettingsStore) {
+    init(settingsStore: any Store<Settings>) {
         self.settingsStore = settingsStore
     }
 }

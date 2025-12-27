@@ -4,21 +4,60 @@
 //
 
 import Combine
-import Foundation
+import SwiftUI
 
-struct Signal<T>: Publisher, Identifiable {
-    typealias Output = T
-    typealias Failure = Never
+class Signal<T: Equatable>: ObservableObject {
+    @Published fileprivate var value: T?
 
-    var id = UUID()
-    private let subject = PassthroughSubject<T, Never>()
-
-    mutating func send(_ input: T) {
-        subject.send(input)
-        id = UUID()
+    func send(_ value: T) {
+        self.value = value
     }
 
-    func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, T == S.Input {
-        subject.receive(subscriber: subscriber)
+    fileprivate func reset() {
+        self.value = nil
+    }
+}
+
+fileprivate struct OneParameterHandlerView<T: Equatable>: ViewModifier {
+    @ObservedObject var signal: Signal<T>
+    var handler: (T) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: signal.value) {
+                guard let value = signal.value else { return }
+                handler(value)
+                signal.reset()
+            }
+    }
+}
+
+fileprivate struct ZeroParameterHandlerView<T: Equatable>: ViewModifier {
+    @ObservedObject var signal: Signal<T>
+    var handler: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: signal.value) {
+                guard signal.value != nil else { return }
+                handler()
+                signal.reset()
+            }
+    }
+}
+
+extension View {
+    func onSignal<T: Equatable>(
+        of signal: Signal<T>,
+        handler: @escaping (T) -> Void
+    ) -> some View {
+        self.modifier(OneParameterHandlerView(signal: signal, handler: handler))
+    }
+
+    func onSignal<T: Equatable>(
+        of signal: Signal<T>,
+        handler: @escaping () -> Void
+    ) -> some View {
+        self.modifier(ZeroParameterHandlerView(signal: signal, handler: handler))
     }
 }

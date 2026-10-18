@@ -3,33 +3,27 @@
 //  CounterApp
 //
 
+/// Composition root: owns the shared dependencies and wires the ViewModels.
 final class AppFactory {
-    lazy var settingsStore = Self.makeSettingsStore()
-    lazy var mainViewModel = Self.makeMainViewModel(settingsStore: settingsStore)
-    lazy var counterViewModel = Self.makeCounterViewModel(settingsStore: settingsStore)
-    lazy var settingsViewModel = Self.makeSettingsViewModel(settingsStore: settingsStore)
-}
+    private let settingsStore: any Store<Settings>
 
-// MARK: - Stores
+    init(settingsStore: any Store<Settings> = SettingsStore()) {
+        self.settingsStore = settingsStore
+    }
 
-extension AppFactory {
-    static func makeSettingsStore() -> any Store<Settings> {
-        SettingsStore()
+    func makeMainViewModel() -> MainViewModel {
+        MainViewModel(factory: self)
     }
 }
 
-// MARK: - ViewModels
+// MARK: - ViewModelFactory
 
-extension AppFactory {
-    static func makeMainViewModel(settingsStore: any Store<Settings>) -> MainViewModel {
-        MainViewModel(settingsStore: settingsStore)
-    }
-
-    static func makeCounterViewModel(settingsStore: any Store<Settings>) -> CounterViewModel {
+extension AppFactory: ViewModelFactory {
+    func makeCounterViewModel() -> CounterViewModel {
         CounterViewModel(settingsStore: settingsStore)
     }
 
-    static func makeSettingsViewModel(settingsStore: any Store<Settings>) -> SettingsViewModel {
+    func makeSettingsViewModel() -> SettingsViewModel {
         SettingsViewModel(settingsStore: settingsStore)
     }
 }

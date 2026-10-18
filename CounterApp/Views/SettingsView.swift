@@ -126,6 +126,5 @@ struct SettingsView: View {
 }
 
 #Preview {
-    let appFactory = AppFactory()
-    SettingsView(viewModel: appFactory.settingsViewModel)
+    SettingsView(viewModel: SettingsViewModel(settingsStore: MockSettingsStore()))
 }

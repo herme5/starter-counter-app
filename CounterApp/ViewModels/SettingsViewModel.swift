@@ -7,7 +7,7 @@ import Foundation
 import Observation
 
 @Observable
-final class SettingsViewModel {
+final class SettingsViewModel: Identifiable {
     @ObservationIgnored private let settingsStore: any Store<Settings>
 
     var counterMin: Int { didSet { save() } }

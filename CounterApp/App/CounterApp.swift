@@ -7,11 +7,11 @@ import SwiftUI
 
 @main
 struct CounterApp: App {
-    private let appFactory = AppFactory()
+    @State private var mainViewModel = AppFactory().makeMainViewModel()
 
     var body: some Scene {
         WindowGroup {
-            MainView(viewModel: appFactory.mainViewModel)
+            MainView(viewModel: mainViewModel)
         }
     }
 }

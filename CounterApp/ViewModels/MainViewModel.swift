@@ -8,19 +8,17 @@ import Observation
 
 @Observable
 final class MainViewModel {
-    @ObservationIgnored private let settingsStore: any Store<Settings>
+    let counterViewModel: CounterViewModel
+    var settingsViewModel: SettingsViewModel?
 
-    init(settingsStore: any Store<Settings>) {
-        self.settingsStore = settingsStore
-    }
-}
+    @ObservationIgnored private let factory: any ViewModelFactory
 
-extension MainViewModel {
-    func makeCounterViewModel() -> CounterViewModel {
-        AppFactory.makeCounterViewModel(settingsStore: settingsStore)
+    init(factory: any ViewModelFactory) {
+        self.factory = factory
+        self.counterViewModel = factory.makeCounterViewModel()
     }
 
-    func makeSettingsViewModel() -> SettingsViewModel {
-        AppFactory.makeSettingsViewModel(settingsStore: settingsStore)
+    func showSettings() {
+        settingsViewModel = factory.makeSettingsViewModel()
     }
 }

@@ -7,20 +7,21 @@ import SwiftUI
 
 struct MainView: View {
     @State private var viewModel: MainViewModel
-    @State private var showSettings = false
 
     init(viewModel: MainViewModel) {
         _viewModel = State(initialValue: viewModel)
     }
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         NavigationStack {
             ZStack {
                 // Background
                 Color.primaryBackground
                     .ignoresSafeArea()
                 
-                CounterView(viewModel: viewModel.makeCounterViewModel())
+                CounterView(viewModel: viewModel.counterViewModel)
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -28,14 +29,14 @@ struct MainView: View {
                 }
                 .sharedBackgroundVisibility(.hidden)
             }
-            .sheet(isPresented: $showSettings) {
-                SettingsView(viewModel: viewModel.makeSettingsViewModel())
+            .sheet(item: $viewModel.settingsViewModel) { settingsViewModel in
+                SettingsView(viewModel: settingsViewModel)
             }
         }
     }
 
     var settingsToolBarItem: some View {
-        Button(action: { showSettings = true }) {
+        Button(action: viewModel.showSettings) {
             Image(systemName: "gearshape.fill")
                 .resizable()
                 .frame(width: 32, height: 32)
@@ -45,7 +46,7 @@ struct MainView: View {
 }
 
 #Preview {
-    let appFactory = AppFactory()
-    MainView(viewModel: appFactory.mainViewModel)
+    let appFactory = AppFactory(settingsStore: MockSettingsStore())
+    MainView(viewModel: appFactory.makeMainViewModel())
 }
 

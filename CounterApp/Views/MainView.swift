@@ -45,8 +45,9 @@ struct MainView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     let appFactory = AppFactory(settingsStore: MockSettingsStore())
     MainView(viewModel: appFactory.makeMainViewModel())
 }
-
+#endif

@@ -3,6 +3,7 @@
 //  CounterApp
 //
 
+#if DEBUG
 import Combine
 
 /// In-memory store for previews and tests. Enforces the same rules as `SettingsStore`.
@@ -22,3 +23,4 @@ final class MockSettingsStore: Store {
         subject.send(settings)
     }
 }
+#endif

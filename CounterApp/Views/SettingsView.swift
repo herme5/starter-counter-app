@@ -5,7 +5,6 @@
 
 import SwiftUI
 
-
 struct SettingsView: View {
     enum Field: Hashable {
         case minimumValue, maximumValue, incrementStep
@@ -21,7 +20,7 @@ struct SettingsView: View {
     var body: some View {
         @Bindable var viewModel = viewModel
 
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(
                     content: {
@@ -125,6 +124,8 @@ struct SettingsView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     SettingsView(viewModel: SettingsViewModel(settingsStore: MockSettingsStore()))
 }
+#endif

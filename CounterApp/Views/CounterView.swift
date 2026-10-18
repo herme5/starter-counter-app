@@ -3,7 +3,6 @@
 //  CounterApp
 //
 
-import Combine
 import SwiftUI
 
 struct CounterView: View {
@@ -17,11 +16,15 @@ struct CounterView: View {
         )
     }
 
-    @StateObject var viewModel: CounterViewModel
+    @State private var viewModel: CounterViewModel
     @State private var currentCounter: Int = 0
     @State private var decreasing = false
     @State private var showErrorAnimation = 0
     @State private var counterAnimationTask: Task<Void, Never>? = nil
+
+    init(viewModel: CounterViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
 
     var body: some View {
         GeometryReader { geo in

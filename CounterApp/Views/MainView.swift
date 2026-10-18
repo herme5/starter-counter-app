@@ -6,8 +6,12 @@
 import SwiftUI
 
 struct MainView: View {
-    @StateObject var viewModel: MainViewModel
+    @State private var viewModel: MainViewModel
     @State private var showSettings = false
+
+    init(viewModel: MainViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
 
     var body: some View {
         NavigationStack {

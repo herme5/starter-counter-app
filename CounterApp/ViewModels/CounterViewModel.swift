@@ -5,15 +5,17 @@
 
 import Combine
 import Foundation
+import Observation
 
-class CounterViewModel: ObservableObject {
+@Observable
+final class CounterViewModel {
     enum CounterError: Error { case maximumOverflow, minimumOverflow }
 
-    @Published var counter: Int
+    private(set) var counter: Int
     let overflowError = Signal<CounterError>()
 
     private var settings: Settings
-    private var cancellables = Set<AnyCancellable>()
+    @ObservationIgnored private var cancellables = Set<AnyCancellable>()
     private var counterStep: Int { settings.counterStep }
     private var counterMin: Int { settings.counterMin }
     private var counterMax: Int { settings.counterMax }

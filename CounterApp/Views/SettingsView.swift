@@ -11,10 +11,16 @@ struct SettingsView: View {
         case minimumValue, maximumValue, incrementStep
     }
 
-    @StateObject var viewModel: SettingsViewModel
+    @State private var viewModel: SettingsViewModel
     @FocusState private var focusedField: Field?
 
+    init(viewModel: SettingsViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
+
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         NavigationView {
             Form {
                 Section(

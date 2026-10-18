@@ -3,11 +3,12 @@
 //  CounterApp
 //
 
-import Combine
 import Foundation
+import Observation
 
-class MainViewModel: ObservableObject {
-    private let settingsStore: any Store<Settings>
+@Observable
+final class MainViewModel {
+    @ObservationIgnored private let settingsStore: any Store<Settings>
 
     init(settingsStore: any Store<Settings>) {
         self.settingsStore = settingsStore

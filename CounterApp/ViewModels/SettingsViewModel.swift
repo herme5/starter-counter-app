@@ -3,17 +3,18 @@
 //  CounterApp
 //
 
-import Combine
 import Foundation
+import Observation
 
-class SettingsViewModel: ObservableObject {
-    private let settingsStore: any Store<Settings>
+@Observable
+final class SettingsViewModel {
+    @ObservationIgnored private let settingsStore: any Store<Settings>
 
-    @Published var counterMin: Int { didSet { save() } }
-    @Published var counterMax: Int { didSet { save() } }
-    @Published var counterStep: Int { didSet { save() } }
-    @Published var rangeErrorMessage: String?
-    @Published var stepErrorMessage: String?
+    var counterMin: Int { didSet { save() } }
+    var counterMax: Int { didSet { save() } }
+    var counterStep: Int { didSet { save() } }
+    private(set) var rangeErrorMessage: String?
+    private(set) var stepErrorMessage: String?
 
     init(settingsStore: any Store<Settings>) {
         self.settingsStore = settingsStore

@@ -8,6 +8,31 @@ import SwiftUI
 struct SettingsView: View {
     enum Field: Hashable {
         case minimumValue, maximumValue, incrementStep
+
+        var title: LocalizedStringKey {
+            switch self {
+            case .minimumValue: "Minimum value"
+            case .maximumValue: "Maximum value"
+            case .incrementStep: "Increment step"
+            }
+        }
+
+        var placeholder: LocalizedStringKey {
+            switch self {
+            case .minimumValue: "Min"
+            case .maximumValue: "Max"
+            case .incrementStep: "Step"
+            }
+        }
+
+        /// The setting this field edits.
+        var keyPath: WritableKeyPath<Settings, Int> {
+            switch self {
+            case .minimumValue: \.counterMin
+            case .maximumValue: \.counterMax
+            case .incrementStep: \.counterStep
+            }
+        }
     }
 
     @State private var viewModel: SettingsViewModel
@@ -18,26 +43,12 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        @Bindable var viewModel = viewModel
-
         NavigationStack {
             Form {
                 Section(
                     content: {
-                        HStack {
-                            Text("Minimum value")
-                            TextField("Min", value: $viewModel.counterMin, formatter: NumberFormatter())
-                                .keyboardType(.numberPad)
-                                .multilineTextAlignment(.trailing)
-                                .focused($focusedField, equals: .minimumValue)
-                        }
-                        HStack {
-                            Text("Maximum value")
-                            TextField("Max", value: $viewModel.counterMax, formatter: NumberFormatter())
-                                .keyboardType(.numberPad)
-                                .multilineTextAlignment(.trailing)
-                                .focused($focusedField, equals: .maximumValue)
-                        }
+                        numberRow(.minimumValue)
+                        numberRow(.maximumValue)
                     },
                     header: { Text("Range") },
                     footer: {
@@ -49,13 +60,7 @@ struct SettingsView: View {
 
                 Section(
                     content: {
-                        HStack {
-                            Text("Increment step")
-                            TextField("Step", value: $viewModel.counterStep, formatter: NumberFormatter())
-                                .keyboardType(.numberPad)
-                                .multilineTextAlignment(.trailing)
-                                .focused($focusedField, equals: .incrementStep)
-                        }
+                        numberRow(.incrementStep)
                     },
                     header: { Text("Increment") },
                     footer: {
@@ -83,32 +88,12 @@ struct SettingsView: View {
         HStack(spacing: 20) {
             Spacer()
 
-            Button(action: {
-                switch focusedField {
-                case .minimumValue:
-                    viewModel.counterMin += 1
-                case .maximumValue:
-                    viewModel.counterMax += 1
-                case .incrementStep:
-                    viewModel.counterStep += 1
-                case nil: break
-                }
-            }) {
+            Button(action: { adjustFocusedField(by: 1) }) {
                 Image(systemName: "plus")
             }
             .foregroundStyle(.primaryForeground)
 
-            Button(action: {
-                switch focusedField {
-                case .minimumValue:
-                    viewModel.counterMin -= 1
-                case .maximumValue:
-                    viewModel.counterMax -= 1
-                case .incrementStep:
-                    viewModel.counterStep -= 1
-                case nil: break
-                }
-            }) {
+            Button(action: { adjustFocusedField(by: -1) }) {
                 Image(systemName: "minus")
             }
             .foregroundStyle(.primaryForeground)
@@ -121,6 +106,23 @@ struct SettingsView: View {
             .foregroundStyle(.primaryForeground)
         }
         .padding(8)
+    }
+
+    private func numberRow(_ field: Field) -> some View {
+        @Bindable var viewModel = viewModel
+
+        return HStack {
+            Text(field.title)
+            TextField(field.placeholder, value: $viewModel.draft[dynamicMember: field.keyPath], formatter: NumberFormatter())
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.trailing)
+                .focused($focusedField, equals: field)
+        }
+    }
+
+    private func adjustFocusedField(by delta: Int) {
+        guard let keyPath = focusedField?.keyPath else { return }
+        viewModel.draft[keyPath: keyPath] += delta
     }
 }
 

@@ -8,34 +8,26 @@ import Observation
 
 @Observable
 final class SettingsViewModel: Identifiable {
-    var counterMin: Int { didSet { save() } }
-    var counterMax: Int { didSet { save() } }
-    var counterStep: Int { didSet { save() } }
-    private(set) var rangeErrorMessage: String?
-    private(set) var stepErrorMessage: String?
+    /// The settings being edited. Valid edits are saved immediately; invalid ones stay local.
+    var draft: Settings { didSet { save() } }
+
+    var rangeErrorMessage: String? {
+        draft.validationErrors.contains(.invalidRange) ? "Minimum must be less than Maximum" : nil
+    }
+
+    var stepErrorMessage: String? {
+        draft.validationErrors.contains(.invalidStep) ? "Step must be positive and non zero" : nil
+    }
 
     @ObservationIgnored private let settingsStore: any Store<Settings>
 
     init(settingsStore: any Store<Settings>) {
         self.settingsStore = settingsStore
-
-        let settings = settingsStore.object
-        self.counterMin = settings.counterMin
-        self.counterMax = settings.counterMax
-        self.counterStep = settings.counterStep
+        self.draft = settingsStore.object
     }
 
     private func save() {
-        let settings = Settings(
-            counterMin: counterMin,
-            counterMax: counterMax,
-            counterStep: counterStep
-        )
-        let errors = settings.validationErrors
-        rangeErrorMessage = errors.contains(.invalidRange) ? "Minimum must be less than Maximum" : nil
-        stepErrorMessage = errors.contains(.invalidStep) ? "Step must be positive and non zero" : nil
-
-        // The store rejects invalid settings; the messages above already explain why.
-        try? settingsStore.save(settings)
+        // The store rejects invalid settings; the error messages already explain why.
+        try? settingsStore.save(draft)
     }
 }

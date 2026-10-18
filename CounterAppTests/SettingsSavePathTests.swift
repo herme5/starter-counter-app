@@ -39,7 +39,7 @@ final class SettingsSavePathTests {
         #expect(counter.counter == 8)
 
         let settings = try openSettings()
-        settings.counterMax = 5
+        settings.draft.counterMax = 5
 
         #expect(persistedSettings == Settings(counterMin: 0, counterMax: 5, counterStep: 1))
         #expect(counter.counter == 5)
@@ -50,7 +50,7 @@ final class SettingsSavePathTests {
         counter.increment()
 
         let settings = try openSettings()
-        settings.counterMin = 20
+        settings.draft.counterMin = 20
 
         #expect(settings.rangeErrorMessage != nil)
         #expect(persistedSettings == Settings())
@@ -59,11 +59,11 @@ final class SettingsSavePathTests {
 
     @Test func reopenedSettingsShowTheSavedValues() throws {
         let first = try openSettings()
-        first.counterStep = 4
+        first.draft.counterStep = 4
         mainViewModel.dismissSettings()
 
         let second = try openSettings()
 
-        #expect(second.counterStep == 4)
+        #expect(second.draft.counterStep == 4)
     }
 }

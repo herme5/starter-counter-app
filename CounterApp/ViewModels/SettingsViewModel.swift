@@ -8,13 +8,13 @@ import Observation
 
 @Observable
 final class SettingsViewModel: Identifiable {
-    @ObservationIgnored private let settingsStore: any Store<Settings>
-
     var counterMin: Int { didSet { save() } }
     var counterMax: Int { didSet { save() } }
     var counterStep: Int { didSet { save() } }
     private(set) var rangeErrorMessage: String?
     private(set) var stepErrorMessage: String?
+
+    @ObservationIgnored private let settingsStore: any Store<Settings>
 
     init(settingsStore: any Store<Settings>) {
         self.settingsStore = settingsStore
@@ -25,38 +25,17 @@ final class SettingsViewModel: Identifiable {
         self.counterStep = settings.counterStep
     }
 
-    func save() {
-        if let settings = validateInputs() {
-            settingsStore.object = settings
-        }
-    }
-
-    func reset() {
-        let settings = settingsStore.object
-        self.counterMin = settings.counterMin
-        self.counterMax = settings.counterMax
-        self.counterStep = settings.counterStep
-    }
-
-    private func validateInputs() -> Settings? {
+    private func save() {
         let settings = Settings(
             counterMin: counterMin,
             counterMax: counterMax,
             counterStep: counterStep
         )
-        do {
-            try settings.validate()
-            rangeErrorMessage = nil
-            stepErrorMessage = nil
-            return settings
-        } catch {
-            switch error {
-            case .invalidRange:
-                rangeErrorMessage = "Minimum must be less than Maximum"
-            case .invalidStep:
-                stepErrorMessage = "Step must be positive and non zero"
-            }
-            return nil
-        }
+        let errors = settings.validationErrors
+        rangeErrorMessage = errors.contains(.invalidRange) ? "Minimum must be less than Maximum" : nil
+        stepErrorMessage = errors.contains(.invalidStep) ? "Step must be positive and non zero" : nil
+
+        // The store rejects invalid settings; the messages above already explain why.
+        try? settingsStore.save(settings)
     }
 }

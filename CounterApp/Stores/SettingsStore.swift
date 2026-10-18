@@ -5,29 +5,33 @@
 
 import Combine
 import Foundation
+import OSLog
 
 final class SettingsStore: Store {
     private static let key = "settings"
-    private static let defaults = UserDefaults.standard
 
-    @Published var object: Settings { didSet { Self.save(object) } }
-    var objectPublisher: Published<Settings>.Publisher { $object }
+    private let defaults: UserDefaults
+    private let subject: CurrentValueSubject<Settings, Never>
 
-    init() {
-        self.object = Self.load() ?? Settings()
+    var object: Settings { subject.value }
+    var objectPublisher: AnyPublisher<Settings, Never> { subject.eraseToAnyPublisher() }
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        let stored: Settings? = try? defaults.codable(forKey: Self.key)
+        let initial = stored.flatMap { $0.isValid ? $0 : nil } ?? Settings()
+        self.subject = CurrentValueSubject(initial)
     }
 
-    private static func load() -> Settings? {
-        return try? defaults.codable(forKey: key)
-    }
+    func save(_ settings: Settings) throws {
+        try settings.validate()
+        guard settings != subject.value else { return }
 
-    private static func save(_ settings: Settings) {
-        if let oldSettings = load(), oldSettings == settings {
-            return
+        do {
+            try defaults.set(codable: settings, forKey: Self.key)
+        } catch {
+            AppLogger.store.error("Failed to persist settings: \(error.localizedDescription)")
         }
-        if !settings.isValid {
-            return
-        }
-        try? defaults.set(codable: settings, forKey: key)
+        subject.send(settings)
     }
 }

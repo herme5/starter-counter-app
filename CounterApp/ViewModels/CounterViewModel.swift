@@ -25,14 +25,10 @@ final class CounterViewModel {
         self.counter = settingsStore.object.counterMin
 
         settingsStore.objectPublisher
-            .filter(\.isValid)
-            .sink(receiveValue: onNewSettingsReceived)
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] settings in self?.apply(settings) }
             .store(in: &cancellables)
-    }
-
-    func onNewSettingsReceived(_ settings: Settings) {
-        self.settings = settings
-        self.counter = settings.counterMin
     }
 
     func increment() {
@@ -44,7 +40,7 @@ final class CounterViewModel {
         let delta = min(counterStep, counterMax - counter)
         counter += delta
     }
-    
+
     func decrement() {
         guard counter > counterMin else {
             overflowError.send(.minimumOverflow)
@@ -54,8 +50,14 @@ final class CounterViewModel {
         let delta = min(counterStep, counter - counterMin)
         counter -= delta
     }
-    
+
     func reset() {
         counter = counterMin
+    }
+
+    /// Keeps the current value when it still fits, otherwise clamps it into the new range.
+    private func apply(_ settings: Settings) {
+        self.settings = settings
+        counter = min(max(counter, counterMin), counterMax)
     }
 }

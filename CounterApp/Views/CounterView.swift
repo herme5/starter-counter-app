@@ -6,7 +6,6 @@
 import SwiftUI
 
 struct CounterView: View {
-    private let counterAnimationDurationSec = 0.4
     private let spacing = CGFloat(12)
     private let buttonSize = CGSize(width: 80, height: 80)
     private var counterSize: CGSize {
@@ -17,10 +16,7 @@ struct CounterView: View {
     }
 
     @State private var viewModel: CounterViewModel
-    @State private var currentCounter: Int = 0
-    @State private var decreasing = false
     @State private var showErrorAnimation = 0
-    @State private var counterAnimationTask: Task<Void, Never>? = nil
 
     init(viewModel: CounterViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -56,16 +52,11 @@ struct CounterView: View {
                     width: counterSize.width,
                     height: counterSize.height
                 )
-            Text(currentCounter, format: .number)
-                .contentTransition(.numericText(countsDown: decreasing))
+            RollingNumberText(value: viewModel.counter)
                 .font(.system(size: 42, weight: .bold))
                 .foregroundStyle(.primaryBackground)
                 .frame(width: counterSize.width)
                 .shake(trigger: showErrorAnimation, duration: 0.6)
-                .onChange(of: viewModel.counter, initial: true) { oldValue, newValue in
-                    decreasing = oldValue > newValue
-                    counterRollingAnimation(to: newValue)
-                }
                 .onSignal(of: viewModel.overflowError) {
                     triggerErrorAnimation()
                 }
@@ -128,53 +119,6 @@ struct CounterView: View {
 
     private func triggerErrorAnimation() {
         withAnimation { showErrorAnimation &+= 1 }
-    }
-
-    private func counterRollingAnimation(to endValue: Int) {
-        guard currentCounter != endValue else { return }
-        let distance = abs(currentCounter - endValue)
-
-        guard counterAnimationTask == nil else {
-            counterAnimationTask?.cancel()
-            Task {
-                await Task.yield()
-                counterRollingAnimation(to: endValue)
-            }
-            return
-        }
-
-        guard distance > 9 else {
-            withAnimation { currentCounter = endValue }
-            return
-        }
-
-        let step: Int = distance > 99 ? 9 : 1
-        let stepCount = Double(distance / step).rounded(.up)
-        let intervalSecs = max(0.006, counterAnimationDurationSec / stepCount)
-
-        counterAnimationTask = Task {
-            defer { counterAnimationTask = nil }
-
-            do {
-                while currentCounter > endValue {
-                    let delta = min(step, currentCounter - endValue)
-                    withAnimation { currentCounter -= delta }
-
-                    try Task.checkCancellation()
-                    try await Task.sleep(for: .seconds(intervalSecs))
-                }
-
-                while currentCounter < endValue {
-                    let delta = min(step, endValue - currentCounter)
-                    withAnimation { currentCounter += delta }
-
-                    try Task.checkCancellation()
-                    try await Task.sleep(for: .seconds(intervalSecs))
-                }
-            } catch {
-                return
-            }
-        }
     }
 }
 

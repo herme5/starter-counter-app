@@ -3,7 +3,6 @@
 //  CounterApp
 //
 
-/// Composition root: owns the shared dependencies and wires the ViewModels.
 final class AppFactory {
     private let settingsStore: any Store<Settings>
 

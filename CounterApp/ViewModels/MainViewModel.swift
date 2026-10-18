@@ -9,7 +9,7 @@ import Observation
 @Observable
 final class MainViewModel {
     let counterViewModel: CounterViewModel
-    var settingsViewModel: SettingsViewModel?
+    private(set) var settingsViewModel: SettingsViewModel?
 
     @ObservationIgnored private let factory: any ViewModelFactory
 
@@ -20,5 +20,9 @@ final class MainViewModel {
 
     func showSettings() {
         settingsViewModel = factory.makeSettingsViewModel()
+    }
+
+    func dismissSettings() {
+        settingsViewModel = nil
     }
 }

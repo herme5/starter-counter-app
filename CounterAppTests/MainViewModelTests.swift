@@ -21,10 +21,19 @@ struct MainViewModelTests {
 
         sut.showSettings()
         let first = try #require(sut.settingsViewModel)
-        sut.settingsViewModel = nil
+        sut.dismissSettings()
         sut.showSettings()
         let second = try #require(sut.settingsViewModel)
 
         #expect(first !== second)
+    }
+
+    @Test func dismissSettingsHidesTheSheet() {
+        let sut = makeSUT()
+        sut.showSettings()
+
+        sut.dismissSettings()
+
+        #expect(sut.settingsViewModel == nil)
     }
 }

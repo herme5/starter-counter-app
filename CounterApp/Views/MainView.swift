@@ -13,8 +13,6 @@ struct MainView: View {
     }
 
     var body: some View {
-        @Bindable var viewModel = viewModel
-
         NavigationStack {
             ZStack {
                 // Background
@@ -29,10 +27,20 @@ struct MainView: View {
                 }
                 .sharedBackgroundVisibility(.hidden)
             }
-            .sheet(item: $viewModel.settingsViewModel) { settingsViewModel in
+            .sheet(item: settingsSheetBinding) { settingsViewModel in
                 SettingsView(viewModel: settingsViewModel)
             }
         }
+    }
+
+    /// Reads the presented ViewModel and routes dismissal, such as a swipe down, through the ViewModel.
+    private var settingsSheetBinding: Binding<SettingsViewModel?> {
+        Binding(
+            get: { viewModel.settingsViewModel },
+            set: { newValue in
+                if newValue == nil { viewModel.dismissSettings() }
+            }
+        )
     }
 
     var settingsToolBarItem: some View {

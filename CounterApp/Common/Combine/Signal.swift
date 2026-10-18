@@ -7,7 +7,8 @@ import Combine
 import SwiftUI
 
 class Signal<T: Equatable>: ObservableObject {
-    @Published fileprivate var value: T?
+    /// The last value sent and not yet handled by a view. Readable so tests can assert on it.
+    @Published private(set) var value: T?
 
     func send(_ value: T) {
         self.value = value

@@ -126,8 +126,6 @@ struct SettingsView: View {
     }
 }
 
-#if DEBUG
 #Preview {
-    SettingsView(viewModel: SettingsViewModel(settingsStore: MockSettingsStore()))
+    SettingsView(viewModel: SettingsViewModel(settingsStore: .inMemory()))
 }
-#endif

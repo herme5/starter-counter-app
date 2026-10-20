@@ -15,16 +15,16 @@ final class CounterViewModel {
     let overflowError = Signal<CounterError>()
 
     private var settings: Settings
-    @ObservationIgnored private var cancellables = Set<AnyCancellable>()
     private var counterStep: Int { settings.counterStep }
     private var counterMin: Int { settings.counterMin }
     private var counterMax: Int { settings.counterMax }
+    @ObservationIgnored private var cancellables = Set<AnyCancellable>()
 
-    init(settingsStore: any Store<Settings>) {
-        self.settings = settingsStore.object
-        self.counter = settingsStore.object.counterMin
+    init(settingsStore: SettingsStore) {
+        self.settings = settingsStore.settings
+        self.counter = settingsStore.settings.counterMin
 
-        settingsStore.objectPublisher
+        settingsStore.settingsPublisher
             .removeDuplicates()
             .dropFirst()
             .sink { [weak self] settings in self?.apply(settings) }

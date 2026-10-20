@@ -122,7 +122,6 @@ struct CounterView: View {
     }
 }
 
-#if DEBUG
 #Preview(
     traits: .fixedLayout(width: 400, height: 400)
 ) {
@@ -131,8 +130,6 @@ struct CounterView: View {
         counterMax: 1000,
         counterStep: 100
     )
-    let mockSettingsStore = MockSettingsStore(object: settings)
-    let counterViewModel = CounterViewModel(settingsStore: mockSettingsStore)
+    let counterViewModel = CounterViewModel(settingsStore: .inMemory(settings))
     CounterView(viewModel: counterViewModel)
 }
-#endif

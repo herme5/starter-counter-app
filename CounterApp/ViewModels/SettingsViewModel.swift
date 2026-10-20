@@ -19,11 +19,11 @@ final class SettingsViewModel: Identifiable {
         draft.validationErrors.contains(.invalidStep) ? "Step must be positive and non zero" : nil
     }
 
-    @ObservationIgnored private let settingsStore: any Store<Settings>
+    @ObservationIgnored private let settingsStore: SettingsStore
 
-    init(settingsStore: any Store<Settings>) {
+    init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
-        self.draft = settingsStore.object
+        self.draft = settingsStore.settings
     }
 
     private func save() {

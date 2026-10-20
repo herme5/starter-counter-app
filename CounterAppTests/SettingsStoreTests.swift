@@ -4,48 +4,105 @@
 //
 
 import Combine
-import Foundation
 import Testing
 @testable import CounterApp
 
 @Suite("SettingsStore")
 struct SettingsStoreTests {
-    private let suiteName = "CounterAppTests.\(UUID().uuidString)"
-    private var defaults: UserDefaults { UserDefaults(suiteName: suiteName)! }
+    private struct FailingRepository: SettingsRepository {
+        struct Failure: Error {}
 
-    @Test func startsWithDefaultsWhenNothingIsStored() {
-        let sut = SettingsStore(defaults: defaults)
-        #expect(sut.object == Settings())
+        func load() async throws -> Settings? { throw Failure() }
+        func save(_ settings: Settings) async throws { throw Failure() }
     }
 
-    @Test func savedSettingsPersistAcrossInstances() throws {
-        let saved = Settings(counterMin: 5, counterMax: 50, counterStep: 5)
+    private let stored = Settings(counterMin: 5, counterMax: 50, counterStep: 5)
 
-        try SettingsStore(defaults: defaults).save(saved)
-
-        #expect(SettingsStore(defaults: defaults).object == saved)
+    @Test func startsWithInitialSettingsUntilLoaded() {
+        let sut = SettingsStore(repository: InMemorySettingsRepository(settings: stored))
+        #expect(sut.settings == Settings())
     }
 
-    @Test func invalidSettingsThrowAndLeaveValueUnchanged() {
-        let sut = SettingsStore(defaults: defaults)
+    @Test func loadPublishesStoredSettings() async {
+        let sut = SettingsStore(repository: InMemorySettingsRepository(settings: stored))
+
+        await sut.load()
+
+        #expect(sut.settings == stored)
+    }
+
+    @Test func loadKeepsInitialSettingsWhenNothingIsStored() async {
+        let sut = SettingsStore(repository: InMemorySettingsRepository())
+
+        await sut.load()
+
+        #expect(sut.settings == Settings())
+    }
+
+    @Test func loadIgnoresInvalidStoredSettings() async {
+        let invalid = Settings(counterMin: 0, counterMax: 10, counterStep: 0)
+        let sut = SettingsStore(repository: InMemorySettingsRepository(settings: invalid))
+
+        await sut.load()
+
+        #expect(sut.settings == Settings())
+    }
+
+    @Test func loadKeepsInitialSettingsWhenRepositoryFails() async {
+        let sut = SettingsStore(repository: FailingRepository())
+
+        await sut.load()
+
+        #expect(sut.settings == Settings())
+    }
+
+    @Test func loadDoesNotOverwriteAnEarlierSave() async throws {
+        let sut = SettingsStore(repository: InMemorySettingsRepository(settings: stored))
+        let edited = Settings(counterMin: 0, counterMax: 99, counterStep: 1)
+
+        try sut.save(edited)
+        await sut.load()
+
+        #expect(sut.settings == edited)
+    }
+
+    @Test func savedSettingsReachTheRepository() async throws {
+        let repository = InMemorySettingsRepository()
+        let sut = SettingsStore(repository: repository)
+
+        try sut.save(stored)
+        await sut.flush()
+
+        #expect(try await repository.load() == stored)
+    }
+
+    @Test func invalidSettingsThrowAndAreNotPersisted() async throws {
+        let repository = InMemorySettingsRepository()
+        let sut = SettingsStore(repository: repository)
 
         #expect(throws: SettingsError.invalidRange) {
             try sut.save(Settings(counterMin: 10, counterMax: 0, counterStep: 1))
         }
-        #expect(sut.object == Settings())
+        await sut.flush()
+
+        #expect(sut.settings == Settings())
+        #expect(try await repository.load() == nil)
     }
 
-    @Test func invalidStoredSettingsFallBackToDefaults() throws {
-        try defaults.set(codable: Settings(counterMin: 0, counterMax: 10, counterStep: 0), forKey: "settings")
+    @Test func failedPersistenceKeepsTheNewValue() async throws {
+        let sut = SettingsStore(repository: FailingRepository())
 
-        #expect(SettingsStore(defaults: defaults).object == Settings())
+        try sut.save(stored)
+        await sut.flush()
+
+        #expect(sut.settings == stored)
     }
 
-    @Test func publisherEmitsCurrentValueThenEachSave() throws {
-        let sut = SettingsStore(defaults: defaults)
+    @Test func publisherEmitsCurrentValueThenEachChange() throws {
+        let sut = SettingsStore.inMemory()
         let next = Settings(counterMin: 0, counterMax: 99, counterStep: 1)
         var received: [Settings] = []
-        let cancellable = sut.objectPublisher.sink { received.append($0) }
+        let cancellable = sut.settingsPublisher.sink { received.append($0) }
 
         try sut.save(next)
         try sut.save(next)

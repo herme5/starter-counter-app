@@ -4,14 +4,19 @@
 //
 
 final class AppFactory {
-    private let settingsStore: any Store<Settings>
+    private let settingsStore: SettingsStore
 
-    init(settingsStore: any Store<Settings> = SettingsStore()) {
+    init(settingsStore: SettingsStore = .userDefaults()) {
         self.settingsStore = settingsStore
     }
 
     func makeMainViewModel() -> MainViewModel {
         MainViewModel(factory: self)
+    }
+
+    /// Replaces the default settings with the persisted ones. Call once at launch.
+    func loadSettings() async {
+        await settingsStore.load()
     }
 }
 

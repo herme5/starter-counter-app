@@ -10,8 +10,8 @@ import Testing
 struct CounterViewModelTests {
     private func makeSUT(
         min: Int = 0, max: Int = 10, step: Int = 3
-    ) -> (CounterViewModel, MockSettingsStore) {
-        let store = MockSettingsStore(object: Settings(counterMin: min, counterMax: max, counterStep: step))
+    ) -> (CounterViewModel, SettingsStore) {
+        let store = SettingsStore.inMemory(Settings(counterMin: min, counterMax: max, counterStep: step))
         return (CounterViewModel(settingsStore: store), store)
     }
 

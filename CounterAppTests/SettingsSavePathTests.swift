@@ -7,16 +7,18 @@ import Foundation
 import Testing
 @testable import CounterApp
 
-/// Exercises the real wiring: AppFactory, live SettingsStore, settings and counter ViewModels.
+/// Exercises the real wiring: AppFactory, SettingsStore over UserDefaults, settings and counter ViewModels.
 @Suite("Settings save path")
 final class SettingsSavePathTests {
     private let suiteName = "CounterAppTests.\(UUID().uuidString)"
     private let defaults: UserDefaults
+    private let settingsStore: SettingsStore
     private let mainViewModel: MainViewModel
 
     init() {
         defaults = UserDefaults(suiteName: suiteName)!
-        mainViewModel = AppFactory(settingsStore: SettingsStore(defaults: defaults)).makeMainViewModel()
+        settingsStore = .userDefaults(defaults)
+        mainViewModel = AppFactory(settingsStore: settingsStore).makeMainViewModel()
     }
 
     deinit {
@@ -28,12 +30,13 @@ final class SettingsSavePathTests {
         return try #require(mainViewModel.settingsViewModel)
     }
 
-    /// What a fresh launch would read from UserDefaults.
-    private var persistedSettings: Settings {
-        SettingsStore(defaults: defaults).object
+    /// What a fresh launch would read from UserDefaults, once pending writes are done.
+    private func persistedSettings() async throws -> Settings? {
+        await settingsStore.flush()
+        return try await UserDefaultsSettingsRepository(defaults: defaults).load()
     }
 
-    @Test func validEditIsPersistedAndReachesTheCounter() throws {
+    @Test func validEditIsPersistedAndReachesTheCounter() async throws {
         let counter = mainViewModel.counterViewModel
         for _ in 0..<8 { counter.increment() }
         #expect(counter.counter == 8)
@@ -41,11 +44,11 @@ final class SettingsSavePathTests {
         let settings = try openSettings()
         settings.draft.counterMax = 5
 
-        #expect(persistedSettings == Settings(counterMin: 0, counterMax: 5, counterStep: 1))
+        #expect(try await persistedSettings() == Settings(counterMin: 0, counterMax: 5, counterStep: 1))
         #expect(counter.counter == 5)
     }
 
-    @Test func invalidEditIsNotPersistedAndLeavesTheCounterAlone() throws {
+    @Test func invalidEditIsNotPersistedAndLeavesTheCounterAlone() async throws {
         let counter = mainViewModel.counterViewModel
         counter.increment()
 
@@ -53,7 +56,7 @@ final class SettingsSavePathTests {
         settings.draft.counterMin = 20
 
         #expect(settings.rangeErrorMessage != nil)
-        #expect(persistedSettings == Settings())
+        #expect(try await persistedSettings() == nil)
         #expect(counter.counter == 1)
     }
 
@@ -65,5 +68,16 @@ final class SettingsSavePathTests {
         let second = try openSettings()
 
         #expect(second.draft.counterStep == 4)
+    }
+
+    @Test func persistedSettingsReachTheCounterAtLaunch() async throws {
+        let saved = Settings(counterMin: 3, counterMax: 30, counterStep: 3)
+        try await UserDefaultsSettingsRepository(defaults: defaults).save(saved)
+        let appFactory = AppFactory(settingsStore: .userDefaults(defaults))
+        let counter = appFactory.makeMainViewModel().counterViewModel
+
+        await appFactory.loadSettings()
+
+        #expect(counter.counter == 3)
     }
 }

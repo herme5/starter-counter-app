@@ -7,11 +7,19 @@ import SwiftUI
 
 @main
 struct CounterApp: App {
-    @State private var mainViewModel = AppFactory().makeMainViewModel()
+    private let appFactory: AppFactory
+    @State private var mainViewModel: MainViewModel
+
+    init() {
+        let appFactory = AppFactory()
+        self.appFactory = appFactory
+        _mainViewModel = State(initialValue: appFactory.makeMainViewModel())
+    }
 
     var body: some Scene {
         WindowGroup {
             MainView(viewModel: mainViewModel)
+                .task { await appFactory.loadSettings() }
         }
     }
 }

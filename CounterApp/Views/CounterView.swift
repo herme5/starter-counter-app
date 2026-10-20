@@ -99,7 +99,7 @@ struct CounterView: View {
 
     private func fullWidthButton(
         action: @escaping () -> Void,
-        label: String
+        label: LocalizedStringResource
     ) -> some View {
         Button(action: action) {
             Text(label)

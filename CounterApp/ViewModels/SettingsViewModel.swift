@@ -11,11 +11,11 @@ final class SettingsViewModel: Identifiable {
     /// The settings being edited. Valid edits are saved immediately; invalid ones stay local.
     var draft: Settings { didSet { save() } }
 
-    var rangeErrorMessage: String? {
+    var rangeErrorMessage: LocalizedStringResource? {
         draft.validationErrors.contains(.invalidRange) ? "Minimum must be less than Maximum" : nil
     }
 
-    var stepErrorMessage: String? {
+    var stepErrorMessage: LocalizedStringResource? {
         draft.validationErrors.contains(.invalidStep) ? "Step must be positive and non zero" : nil
     }
 

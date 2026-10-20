@@ -9,7 +9,7 @@ struct SettingsView: View {
     enum Field: Hashable {
         case minimumValue, maximumValue, incrementStep
 
-        var title: LocalizedStringKey {
+        var title: LocalizedStringResource {
             switch self {
             case .minimumValue: "Minimum value"
             case .maximumValue: "Maximum value"
@@ -17,7 +17,7 @@ struct SettingsView: View {
             }
         }
 
-        var placeholder: LocalizedStringKey {
+        var placeholder: LocalizedStringResource {
             switch self {
             case .minimumValue: "Min"
             case .maximumValue: "Max"

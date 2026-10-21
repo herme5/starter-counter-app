@@ -12,7 +12,7 @@ final class CounterViewModel {
     enum CounterError: Error { case maximumOverflow, minimumOverflow }
 
     private(set) var counter: Int
-    let overflowError = Signal<CounterError>()
+    @ObservationIgnored @Event<CounterError> var overflow
 
     private var settings: Settings
     private var counterStep: Int { settings.counterStep }
@@ -33,7 +33,7 @@ final class CounterViewModel {
 
     func increment() {
         guard counter < counterMax else {
-            overflowError.send(.maximumOverflow)
+            _overflow.send(.maximumOverflow)
             return
         }
 
@@ -43,7 +43,7 @@ final class CounterViewModel {
 
     func decrement() {
         guard counter > counterMin else {
-            overflowError.send(.minimumOverflow)
+            _overflow.send(.minimumOverflow)
             return
         }
 

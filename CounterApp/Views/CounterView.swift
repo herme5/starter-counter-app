@@ -57,7 +57,7 @@ struct CounterView: View {
                 .foregroundStyle(.primaryBackground)
                 .frame(width: counterSize.width)
                 .shake(trigger: showErrorAnimation, duration: 0.6)
-                .onSignal(of: viewModel.overflowError) {
+                .onReceive(viewModel.overflow) { _ in
                     triggerErrorAnimation()
                 }
         }

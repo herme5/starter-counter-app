@@ -3,6 +3,7 @@
 //  CounterAppTests
 //
 
+import Combine
 import Testing
 @testable import CounterApp
 
@@ -15,6 +16,16 @@ struct CounterViewModelTests {
         return (CounterViewModel(settingsStore: store), store)
     }
 
+    private func overflows(
+        of sut: CounterViewModel, during action: () -> Void
+    ) -> [CounterViewModel.CounterError] {
+        var received: [CounterViewModel.CounterError] = []
+        let subscription = sut.overflow.sink { received.append($0) }
+        action()
+        subscription.cancel()
+        return received
+    }
+
     @Test func startsAtMinimum() {
         let (sut, _) = makeSUT(min: 2)
         #expect(sut.counter == 2)
@@ -23,22 +34,25 @@ struct CounterViewModelTests {
     @Test func incrementAddsStepAndStopsAtMaximum() {
         let (sut, _) = makeSUT(max: 10, step: 3)
 
-        sut.increment()
-        #expect(sut.counter == 3)
+        let received = overflows(of: sut) {
+            sut.increment()
+            #expect(sut.counter == 3)
 
-        for _ in 0..<3 { sut.increment() }
-        #expect(sut.counter == 10)
-        #expect(sut.overflowError.value == nil)
+            for _ in 0..<3 { sut.increment() }
+            #expect(sut.counter == 10)
+        }
+
+        #expect(received.isEmpty)
     }
 
     @Test func incrementAtMaximumSignalsOverflow() {
         let (sut, _) = makeSUT(min: 0, max: 1, step: 1)
         sut.increment()
 
-        sut.increment()
+        let received = overflows(of: sut) { sut.increment() }
 
         #expect(sut.counter == 1)
-        #expect(sut.overflowError.value == .maximumOverflow)
+        #expect(received == [.maximumOverflow])
     }
 
     @Test func decrementSubtractsStepAndStopsAtMinimum() {
@@ -55,10 +69,21 @@ struct CounterViewModelTests {
     @Test func decrementAtMinimumSignalsOverflow() {
         let (sut, _) = makeSUT()
 
-        sut.decrement()
+        let received = overflows(of: sut) { sut.decrement() }
 
         #expect(sut.counter == 0)
-        #expect(sut.overflowError.value == .minimumOverflow)
+        #expect(received == [.minimumOverflow])
+    }
+
+    @Test func repeatedOverflowIsSentEachTime() {
+        let (sut, _) = makeSUT()
+
+        let received = overflows(of: sut) {
+            sut.decrement()
+            sut.decrement()
+        }
+
+        #expect(received == [.minimumOverflow, .minimumOverflow])
     }
 
     @Test func resetReturnsToMinimum() {

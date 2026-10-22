@@ -35,6 +35,11 @@ struct SettingsView: View {
         }
     }
 
+    let keyboardItemHSpacing: CGFloat = 16
+    let keyboardItemBottomSpace: CGFloat = 12
+    let keyboardItemBarHeight: CGFloat = 44
+
+    @Environment(\.dismiss) private var dismiss
     @State private var viewModel: SettingsViewModel
     @FocusState private var focusedField: Field?
 
@@ -73,39 +78,41 @@ struct SettingsView: View {
             .animation(.default, value: viewModel.rangeErrorMessage)
             .animation(.default, value: viewModel.stepErrorMessage)
             .navigationTitle("Settings")
+            .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    keyboardItemGroup
-                        .background(.bar.opacity(0.5), in: .capsule)
-                        .glassEffect()
-                        .padding(.bottom, 20)
-                }.sharedBackgroundVisibility(.hidden)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(role: .confirm) { dismiss() }
+                }
             }
+            .safeAreaInset(edge: .bottom) {
+                if focusedField != nil {
+                    keyboardItemGroup
+                        .padding(.bottom, keyboardItemBottomSpace)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(.default, value: focusedField)
         }
     }
 
     var keyboardItemGroup: some View {
-        HStack(spacing: 20) {
-            Spacer()
-
+        HStack(spacing: keyboardItemHSpacing) {
             Button(action: { adjustFocusedField(by: 1) }) {
                 Image(systemName: "plus")
+                    .frame(height: keyboardItemBarHeight)
             }
-            .foregroundStyle(.primaryForeground)
-
             Button(action: { adjustFocusedField(by: -1) }) {
                 Image(systemName: "minus")
+                    .frame(height: keyboardItemBarHeight)
             }
-            .foregroundStyle(.primaryForeground)
-
-            Button(action: {
-                focusedField = nil
-            }) {
-                Image(systemName: "checkmark")
+            Button(action: { focusedField = nil }) {
+                Image(systemName: "keyboard.chevron.compact.down")
+                    .frame(height: keyboardItemBarHeight)
             }
-            .foregroundStyle(.primaryForeground)
         }
-        .padding(8)
+        .padding(.horizontal, keyboardItemHSpacing)
+        .foregroundStyle(.primaryForeground)
+        .glassEffect()
     }
 
     private func numberRow(_ field: Field) -> some View {
@@ -118,6 +125,8 @@ struct SettingsView: View {
                 .multilineTextAlignment(.trailing)
                 .focused($focusedField, equals: field)
         }
+        .contentShape(.rect)
+        .onTapGesture { focusedField = field }
     }
 
     private func adjustFocusedField(by delta: Int) {

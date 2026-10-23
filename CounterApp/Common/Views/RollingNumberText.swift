@@ -13,23 +13,27 @@ struct RollingNumberText: View {
     let value: Int
     var duration: TimeInterval = 0.4
 
-    @State private var displayedValue = 0
+    @State private var displayedValue: Int
     @State private var countsDown = false
     @State private var rollingTask: Task<Void, Never>?
+
+    init(value: Int, duration: TimeInterval = 0.4) {
+        self.value = value
+        self.duration = duration
+        _displayedValue = State(initialValue: value)
+    }
 
     var body: some View {
         Text(displayedValue, format: .number)
             .contentTransition(.numericText(countsDown: countsDown))
-            .onChange(of: value, initial: true) { oldValue, newValue in
-                countsDown = oldValue > newValue
-                roll(to: newValue)
-            }
+            .onChange(of: value) { _, newValue in roll(to: newValue) }
             .onDisappear { rollingTask?.cancel() }
     }
 
     private func roll(to target: Int) {
         rollingTask?.cancel()
         rollingTask = nil
+        countsDown = target < displayedValue
 
         let distance = abs(target - displayedValue)
         guard distance > 9 else {
@@ -57,7 +61,17 @@ struct RollingNumberText: View {
     VStack(spacing: 20) {
         RollingNumberText(value: value)
             .font(.system(size: 42, weight: .bold))
-        Button("Add 500") { value += 500 }
-        Button("Add 1") { value += 1 }
+        HStack(spacing: 20) {
+            Button("+1") { value += 1 }
+            Button("+5") { value += 5 }
+            Button("+10") { value += 10 }
+            Button("+500") { value += 500 }
+        }
+        HStack(spacing: 20) {
+            Button("-1") { value -= 1 }
+            Button("-5") { value -= 5 }
+            Button("-10") { value -= 10 }
+            Button("-500") { value -= 500 }
+        }
     }
 }

@@ -16,7 +16,7 @@ final class UserDefaultsSettingsRepositoryTests {
         defaults = UserDefaults(suiteName: suiteName)!
     }
 
-    deinit {
+    isolated deinit {
         defaults.removePersistentDomain(forName: suiteName)
     }
 

@@ -35,16 +35,16 @@ struct SettingsView: View {
         }
     }
 
-    let keyboardItemHSpacing: CGFloat = 16
-    let keyboardItemBottomSpace: CGFloat = 12
-    let keyboardItemBarHeight: CGFloat = 44
+    private let keyboardItemHSpacing: CGFloat = 16
+    private let keyboardItemBottomSpace: CGFloat = 12
+    private let keyboardItemBarHeight: CGFloat = 44
 
     @Environment(\.dismiss) private var dismiss
-    @State private var viewModel: SettingsViewModel
+    @Bindable private var viewModel: SettingsViewModel
     @FocusState private var focusedField: Field?
 
     init(viewModel: SettingsViewModel) {
-        _viewModel = State(initialValue: viewModel)
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -81,8 +81,20 @@ struct SettingsView: View {
             .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(role: .confirm) { dismiss() }
+                    Button(role: .confirm) {
+                        if viewModel.requestDismiss() { dismiss() }
+                    }
                 }
+            }
+            .interactiveDismissDisabled(!viewModel.draft.isValid)
+            .alert("Invalid Settings", isPresented: $viewModel.isDiscardAlertPresented) {
+                Button("Keep Editing", role: .cancel) {}
+                Button("Discard Invalid Changes", role: .destructive) {
+                    viewModel.discardInvalidChanges()
+                    dismiss()
+                }
+            } message: {
+                Text("Some values are invalid. Discard them and keep the last valid settings?")
             }
             .safeAreaInset(edge: .bottom) {
                 if focusedField != nil {
@@ -95,32 +107,33 @@ struct SettingsView: View {
         }
     }
 
-    var keyboardItemGroup: some View {
+    private var keyboardItemGroup: some View {
         HStack(spacing: keyboardItemHSpacing) {
-            Button(action: { adjustFocusedField(by: 1) }) {
-                Image(systemName: "plus")
-                    .frame(height: keyboardItemBarHeight)
-            }
-            Button(action: { adjustFocusedField(by: -1) }) {
-                Image(systemName: "minus")
-                    .frame(height: keyboardItemBarHeight)
-            }
-            Button(action: { focusedField = nil }) {
-                Image(systemName: "keyboard.chevron.compact.down")
-                    .frame(height: keyboardItemBarHeight)
-            }
+            keyboardItem("Increase value", systemImage: "plus") { adjustFocusedField(by: 1) }
+            keyboardItem("Decrease value", systemImage: "minus") { adjustFocusedField(by: -1) }
+            keyboardItem("Hide keyboard", systemImage: "keyboard.chevron.compact.down") { focusedField = nil }
         }
         .padding(.horizontal, keyboardItemHSpacing)
         .foregroundStyle(.primaryForeground)
         .glassEffect()
     }
 
-    private func numberRow(_ field: Field) -> some View {
-        @Bindable var viewModel = viewModel
+    private func keyboardItem(
+        _ title: LocalizedStringResource,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label { Text(title) } icon: { Image(systemName: systemImage) }
+                .labelStyle(.iconOnly)
+                .frame(height: keyboardItemBarHeight)
+        }
+    }
 
-        return HStack {
+    private func numberRow(_ field: Field) -> some View {
+        HStack {
             Text(field.title)
-            TextField(field.placeholder, value: $viewModel.draft[dynamicMember: field.keyPath], formatter: NumberFormatter())
+            TextField(field.placeholder, value: $viewModel.draft[dynamicMember: field.keyPath], format: .number)
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.trailing)
                 .focused($focusedField, equals: field)

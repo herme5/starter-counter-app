@@ -7,19 +7,17 @@ import SwiftUI
 
 @main
 struct CounterApp: App {
-    private let appFactory: AppFactory
+    private let container = AppContainer()
     @State private var mainViewModel: MainViewModel
 
     init() {
-        let appFactory = AppFactory()
-        self.appFactory = appFactory
-        _mainViewModel = State(initialValue: appFactory.makeMainViewModel())
+        _mainViewModel = State(initialValue: container.makeMainViewModel())
     }
 
     var body: some Scene {
         WindowGroup {
             MainView(viewModel: mainViewModel)
-                .task { await appFactory.loadSettings() }
+                .task { await container.restore() }
         }
     }
 }

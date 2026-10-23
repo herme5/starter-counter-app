@@ -18,10 +18,10 @@ final class SettingsSavePathTests {
     init() {
         defaults = UserDefaults(suiteName: suiteName)!
         settingsStore = .userDefaults(defaults)
-        mainViewModel = AppFactory(settingsStore: settingsStore).makeMainViewModel()
+        mainViewModel = AppContainer(settingsStore: settingsStore).makeMainViewModel()
     }
 
-    deinit {
+    isolated deinit {
         defaults.removePersistentDomain(forName: suiteName)
     }
 
@@ -73,10 +73,10 @@ final class SettingsSavePathTests {
     @Test func persistedSettingsReachTheCounterAtLaunch() async throws {
         let saved = Settings(counterMin: 3, counterMax: 30, counterStep: 3)
         try await UserDefaultsSettingsRepository(defaults: defaults).save(saved)
-        let appFactory = AppFactory(settingsStore: .userDefaults(defaults))
+        let appFactory = AppContainer(settingsStore: .userDefaults(defaults))
         let counter = appFactory.makeMainViewModel().counterViewModel
 
-        await appFactory.loadSettings()
+        await appFactory.restore()
 
         #expect(counter.counter == 3)
     }

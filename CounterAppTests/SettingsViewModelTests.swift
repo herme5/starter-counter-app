@@ -68,4 +68,30 @@ struct SettingsViewModelTests {
         #expect(sut.rangeErrorMessage == nil)
         #expect(store.settings == Settings(counterMin: 20, counterMax: 30, counterStep: 2))
     }
+
+    @Test func validDraftCanBeDismissed() {
+        let (sut, _) = makeSUT()
+
+        #expect(sut.requestDismiss())
+        #expect(!sut.isDiscardAlertPresented)
+    }
+
+    @Test func invalidDraftPresentsTheDiscardAlert() {
+        let (sut, _) = makeSUT()
+        sut.draft.counterMin = 10
+
+        #expect(!sut.requestDismiss())
+        #expect(sut.isDiscardAlertPresented)
+    }
+
+    @Test func discardRevertsToTheLastValidSettings() {
+        let (sut, store) = makeSUT()
+        sut.draft.counterMax = 50
+        sut.draft.counterStep = 0
+
+        sut.discardInvalidChanges()
+
+        #expect(sut.draft == Settings(counterMin: 0, counterMax: 50, counterStep: 1))
+        #expect(sut.draft == store.settings)
+    }
 }

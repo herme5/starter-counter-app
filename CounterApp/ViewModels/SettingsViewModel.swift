@@ -19,11 +19,27 @@ final class SettingsViewModel: Identifiable {
         draft.validationErrors.contains(.invalidStep) ? "Step must be positive and non zero" : nil
     }
 
+    var isDiscardAlertPresented = false
+
     @ObservationIgnored private let settingsStore: SettingsStore
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
         self.draft = settingsStore.settings
+    }
+
+    /// Whether the settings can close now. Otherwise presents the discard alert.
+    func requestDismiss() -> Bool {
+        guard draft.isValid else {
+            isDiscardAlertPresented = true
+            return false
+        }
+        return true
+    }
+
+    /// Drops the invalid edits and goes back to the last valid settings, which are already saved.
+    func discardInvalidChanges() {
+        draft = settingsStore.settings
     }
 
     private func save() {

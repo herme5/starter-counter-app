@@ -11,7 +11,7 @@ import SwiftUI
 /// step through intermediate values over `duration`, so the number visibly counts.
 struct RollingNumberText: View {
     let value: Int
-    var duration: TimeInterval = 0.4
+    let duration: TimeInterval
 
     @State private var displayedValue: Int
     @State private var countsDown = false

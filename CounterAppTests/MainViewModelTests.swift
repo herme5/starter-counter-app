@@ -9,7 +9,7 @@ import Testing
 @Suite("MainViewModel")
 struct MainViewModelTests {
     private func makeSUT() -> MainViewModel {
-        AppFactory(settingsStore: .inMemory()).makeMainViewModel()
+        AppContainer(settingsStore: .inMemory()).makeMainViewModel()
     }
 
     @Test func startsWithSettingsHidden() {

@@ -6,10 +6,10 @@
 import SwiftUI
 
 struct MainView: View {
-    @State private var viewModel: MainViewModel
+    private let viewModel: MainViewModel
 
     init(viewModel: MainViewModel) {
-        _viewModel = State(initialValue: viewModel)
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -23,7 +23,7 @@ struct MainView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    settingsToolBarItem
+                    settingsToolbarItem
                 }
                 .sharedBackgroundVisibility(.hidden)
             }
@@ -31,6 +31,16 @@ struct MainView: View {
                 SettingsView(viewModel: settingsViewModel)
             }
         }
+    }
+
+    private var settingsToolbarItem: some View {
+        Button(action: viewModel.showSettings) {
+            Image(systemName: "gearshape.fill")
+                .resizable()
+                .frame(width: 32, height: 32)
+        }
+        .foregroundStyle(.primaryForeground)
+        .accessibilityLabel("Settings")
     }
 
     /// Reads the presented ViewModel and routes dismissal, such as a swipe down, through the ViewModel.
@@ -42,18 +52,9 @@ struct MainView: View {
             }
         )
     }
-
-    var settingsToolBarItem: some View {
-        Button(action: viewModel.showSettings) {
-            Image(systemName: "gearshape.fill")
-                .resizable()
-                .frame(width: 32, height: 32)
-        }
-        .foregroundStyle(.primaryForeground)
-    }
 }
 
 #Preview {
-    let appFactory = AppFactory(settingsStore: .inMemory())
-    MainView(viewModel: appFactory.makeMainViewModel())
+    let container = AppContainer(settingsStore: .inMemory())
+    MainView(viewModel: container.makeMainViewModel())
 }

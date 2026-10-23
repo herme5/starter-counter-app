@@ -23,12 +23,3 @@ struct UserDefaultsSettingsRepository: SettingsRepository {
         try defaults.set(codable: settings, forKey: Self.key)
     }
 }
-
-extension SettingsStore {
-    /// A store that loads from and persists to `defaults`.
-    static func userDefaults(_ defaults: UserDefaults = .standard) -> SettingsStore {
-        SettingsStore(
-            repository: UserDefaultsSettingsRepository(defaults: defaults)
-        )
-    }
-}

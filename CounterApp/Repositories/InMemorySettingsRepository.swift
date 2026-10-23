@@ -19,13 +19,3 @@ final class InMemorySettingsRepository: SettingsRepository {
         stored = settings
     }
 }
-
-extension SettingsStore {
-    /// A store that starts with `settings` and keeps every change in memory.
-    static func inMemory(_ settings: Settings = Settings()) -> SettingsStore {
-        SettingsStore(
-            repository: InMemorySettingsRepository(settings: settings),
-            initialSettings: settings
-        )
-    }
-}

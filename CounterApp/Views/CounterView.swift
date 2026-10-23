@@ -11,15 +11,15 @@ struct CounterView: View {
     private var counterSize: CGSize {
         CGSize(
             width: buttonSize.width * 2 + spacing,
-            height: buttonSize.width * 2 + spacing
+            height: buttonSize.height * 2 + spacing
         )
     }
 
-    @State private var viewModel: CounterViewModel
+    private let viewModel: CounterViewModel
     @State private var showErrorAnimation = 0
 
     init(viewModel: CounterViewModel) {
-        _viewModel = State(initialValue: viewModel)
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -56,8 +56,9 @@ struct CounterView: View {
                 .font(.system(size: 42, weight: .bold))
                 .foregroundStyle(.primaryBackground)
                 .frame(width: counterSize.width)
-                .shake(trigger: showErrorAnimation, duration: 0.6)
-                .onReceive(viewModel.overflow) { _ in
+                .shake(trigger: showErrorAnimation)
+                .sensoryFeedback(.error, trigger: showErrorAnimation)
+                .onReceive(viewModel.limitReached) { _ in
                     triggerErrorAnimation()
                 }
         }
@@ -68,22 +69,26 @@ struct CounterView: View {
             HStack(spacing: spacing) {
                 controlButton(
                     action: viewModel.increment,
+                    label: "Increase",
                     imageSystemName: "plus.square.fill"
                 )
                 controlButton(
                     action: viewModel.decrement,
+                    label: "Decrease",
                     imageSystemName: "minus.square.fill"
                 )
             }
             fullWidthButton(
                 action: viewModel.reset,
-                label: "⌫ Reset"
+                label: "Reset",
+                imageSystemName: "delete.left"
             )
         }
     }
 
     private func controlButton(
         action: @escaping () -> Void,
+        label: LocalizedStringResource,
         imageSystemName: String
     ) -> some View {
         Button(action: action) {
@@ -95,16 +100,19 @@ struct CounterView: View {
             height: buttonSize.height
         )
         .foregroundStyle(.primaryForeground)
+        .accessibilityLabel(Text(label))
     }
 
     private func fullWidthButton(
         action: @escaping () -> Void,
-        label: LocalizedStringResource
+        label: LocalizedStringResource,
+        imageSystemName: String
     ) -> some View {
         Button(action: action) {
-            Text(label)
+            Label { Text(label) } icon: { Image(systemName: imageSystemName) }
+                .labelStyle(.titleAndIcon)
                 .font(.system(size: 24, weight: .bold))
-                .foregroundColor(.primaryBackground)
+                .foregroundStyle(.primaryBackground)
                 .frame(
                     width: counterSize.width,
                     height: buttonSize.height
@@ -114,11 +122,10 @@ struct CounterView: View {
                     in: RoundedRectangle(cornerRadius: 12)
                 )
         }
-        .foregroundStyle(.primaryForeground)
     }
 
     private func triggerErrorAnimation() {
-        withAnimation { showErrorAnimation &+= 1 }
+        showErrorAnimation &+= 1
     }
 }
 

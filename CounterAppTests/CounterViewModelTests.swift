@@ -18,9 +18,9 @@ struct CounterViewModelTests {
 
     private func overflows(
         of sut: CounterViewModel, during action: () -> Void
-    ) -> [CounterViewModel.CounterError] {
-        var received: [CounterViewModel.CounterError] = []
-        let subscription = sut.overflow.sink { received.append($0) }
+    ) -> [CounterViewModel.CounterLimit] {
+        var received: [CounterViewModel.CounterLimit] = []
+        let subscription = sut.limitReached.sink { received.append($0) }
         action()
         subscription.cancel()
         return received
@@ -52,7 +52,7 @@ struct CounterViewModelTests {
         let received = overflows(of: sut) { sut.increment() }
 
         #expect(sut.counter == 1)
-        #expect(received == [.maximumOverflow])
+        #expect(received == [.maximum])
     }
 
     @Test func decrementSubtractsStepAndStopsAtMinimum() {
@@ -72,7 +72,7 @@ struct CounterViewModelTests {
         let received = overflows(of: sut) { sut.decrement() }
 
         #expect(sut.counter == 0)
-        #expect(received == [.minimumOverflow])
+        #expect(received == [.minimum])
     }
 
     @Test func repeatedOverflowIsSentEachTime() {
@@ -83,7 +83,7 @@ struct CounterViewModelTests {
             sut.decrement()
         }
 
-        #expect(received == [.minimumOverflow, .minimumOverflow])
+        #expect(received == [.minimum, .minimum])
     }
 
     @Test func resetReturnsToMinimum() {

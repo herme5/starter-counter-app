@@ -9,10 +9,10 @@ import Observation
 
 @Observable
 final class CounterViewModel {
-    enum CounterError: Error { case maximumOverflow, minimumOverflow }
+    enum CounterLimit { case maximum, minimum }
 
     private(set) var counter: Int
-    @ObservationIgnored @Event<CounterError> var overflow
+    @ObservationIgnored @Event<CounterLimit> var limitReached
 
     private var settings: Settings
     private var counterStep: Int { settings.counterStep }
@@ -33,7 +33,7 @@ final class CounterViewModel {
 
     func increment() {
         guard counter < counterMax else {
-            _overflow.send(.maximumOverflow)
+            _limitReached.send(.maximum)
             return
         }
 
@@ -43,7 +43,7 @@ final class CounterViewModel {
 
     func decrement() {
         guard counter > counterMin else {
-            _overflow.send(.minimumOverflow)
+            _limitReached.send(.minimum)
             return
         }
 

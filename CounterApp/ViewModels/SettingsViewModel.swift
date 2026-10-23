@@ -3,59 +3,47 @@
 //  CounterApp
 //
 
-import Combine
 import Foundation
+import Observation
 
-class SettingsViewModel: ObservableObject {
-    private let settingsStore: any Store<Settings>
+@Observable
+final class SettingsViewModel: Identifiable {
+    /// The settings being edited. Valid edits are saved immediately; invalid ones stay local.
+    var draft: Settings { didSet { save() } }
 
-    @Published var counterMin: Int { didSet { save() } }
-    @Published var counterMax: Int { didSet { save() } }
-    @Published var counterStep: Int { didSet { save() } }
-    @Published var rangeErrorMessage: String?
-    @Published var stepErrorMessage: String?
+    var rangeErrorMessage: LocalizedStringResource? {
+        draft.validationErrors.contains(.invalidRange) ? "Minimum must be less than Maximum" : nil
+    }
 
-    init(settingsStore: any Store<Settings>) {
+    var stepErrorMessage: LocalizedStringResource? {
+        draft.validationErrors.contains(.invalidStep) ? "Step must be positive and non zero" : nil
+    }
+
+    var isDiscardAlertPresented = false
+
+    @ObservationIgnored private let settingsStore: SettingsStore
+
+    init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
-
-        let settings = settingsStore.object
-        self.counterMin = settings.counterMin
-        self.counterMax = settings.counterMax
-        self.counterStep = settings.counterStep
+        self.draft = settingsStore.settings
     }
 
-    func save() {
-        if let settings = validateInputs() {
-            settingsStore.object = settings
+    /// Whether the settings can close now. Otherwise presents the discard alert.
+    func requestDismiss() -> Bool {
+        guard draft.isValid else {
+            isDiscardAlertPresented = true
+            return false
         }
+        return true
     }
 
-    func reset() {
-        let settings = settingsStore.object
-        self.counterMin = settings.counterMin
-        self.counterMax = settings.counterMax
-        self.counterStep = settings.counterStep
+    /// Drops the invalid edits and goes back to the last valid settings, which are already saved.
+    func discardInvalidChanges() {
+        draft = settingsStore.settings
     }
 
-    private func validateInputs() -> Settings? {
-        let settings = Settings(
-            counterMin: counterMin,
-            counterMax: counterMax,
-            counterStep: counterStep
-        )
-        do {
-            try settings.validate()
-            rangeErrorMessage = nil
-            stepErrorMessage = nil
-            return settings
-        } catch {
-            switch error {
-            case .invalidRange:
-                rangeErrorMessage = "Minimum must be less than Maximum"
-            case .invalidStep:
-                stepErrorMessage = "Step must be positive and non zero"
-            }
-            return nil
-        }
+    private func save() {
+        // The store rejects invalid settings; the error messages already explain why.
+        try? settingsStore.save(draft)
     }
 }

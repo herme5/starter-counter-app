@@ -4,30 +4,71 @@
 //
 
 import Combine
-import Foundation
+import OSLog
 
-final class SettingsStore: Store {
-    private static let key = "settings"
-    private static let defaults = UserDefaults.standard
+/// Holds the current settings, enforces their rules, and publishes every change.
+///
+/// `settings` and `settingsPublisher` only ever expose valid values, so subscribers never need to
+/// validate what they receive. Where the settings are persisted is up to the `SettingsRepository`.
+final class SettingsStore {
+    private let repository: any SettingsRepository
+    private let subject: CurrentValueSubject<Settings, Never>
 
-    @Published var object: Settings { didSet { Self.save(object) } }
-    var objectPublisher: Published<Settings>.Publisher { $object }
+    /// Set by the first change, so a slower `load()` cannot overwrite it.
+    private var hasChanged = false
+    private var lastWrite: Task<Void, Never>?
 
-    init() {
-        self.object = Self.load() ?? Settings()
+    var settings: Settings { subject.value }
+
+    /// Emits the current value on subscription, then every change.
+    var settingsPublisher: AnyPublisher<Settings, Never> { subject.eraseToAnyPublisher() }
+
+    /// Starts with `initialSettings` until `load()` replaces them with the stored ones.
+    init(repository: any SettingsRepository, initialSettings: Settings = Settings()) {
+        self.repository = repository
+        self.subject = CurrentValueSubject(initialSettings.isValid ? initialSettings : Settings())
     }
 
-    private static func load() -> Settings? {
-        return try? defaults.codable(forKey: key)
+    /// Fetches and publishes the stored settings, unless they are missing or invalid, or the settings changed in the meantime.
+    func load() async {
+        let stored: Settings?
+        do {
+            stored = try await repository.load()
+        } catch {
+            AppLogger.store.error("Failed to load settings: \(error.localizedDescription)")
+            return
+        }
+
+        guard !hasChanged, let stored, stored.isValid, stored != subject.value else { return }
+        subject.send(stored)
     }
 
-    private static func save(_ settings: Settings) {
-        if let oldSettings = load(), oldSettings == settings {
-            return
+    /// Publishes `settings` right away and persists them in the background, in call order.
+    ///
+    /// Throws when `settings` break a rule. The current value is then left unchanged.
+    func save(_ settings: Settings) throws(SettingsError) {
+        try settings.validate()
+        guard settings != subject.value else { return }
+
+        hasChanged = true
+        subject.send(settings)
+        persist(settings)
+    }
+
+    /// Waits until every saved value has reached the repository.
+    func flush() async {
+        await lastWrite?.value
+    }
+
+    private func persist(_ settings: Settings) {
+        let previousWrite = lastWrite
+        lastWrite = Task { [repository] in
+            await previousWrite?.value
+            do {
+                try await repository.save(settings)
+            } catch {
+                AppLogger.store.error("Failed to persist settings: \(error.localizedDescription)")
+            }
         }
-        if !settings.isValid {
-            return
-        }
-        try? defaults.set(codable: settings, forKey: key)
     }
 }

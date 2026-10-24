@@ -26,42 +26,31 @@ struct CounterView: View {
         GeometryReader { geo in
             let isPortait = geo.size.height >= geo.size.width
 
-            ZStack {
-                Color.primaryBackground
+            let layout = isPortait
+            ? AnyLayout(VStackLayout(spacing: spacing))
+            : AnyLayout(HStackLayout(spacing: spacing))
 
-                if isPortait {
-                    VStack(spacing: spacing) {
-                        counterBlock
-                        controlBlock
-                    }
-                } else {
-                    HStack(spacing: spacing) {
-                        counterBlock
-                        controlBlock
-                    }
-                }
+            layout {
+                counterBlock
+                controlBlock
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
     private var counterBlock: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .foregroundStyle(.primaryForeground)
-                .frame(
-                    width: counterSize.width,
-                    height: counterSize.height
-                )
-            RollingNumberText(value: viewModel.counter)
-                .font(.system(size: 42, weight: .bold))
-                .foregroundStyle(.primaryBackground)
-                .frame(width: counterSize.width)
-                .shake(trigger: showErrorAnimation)
-                .sensoryFeedback(.error, trigger: showErrorAnimation)
-                .onReceive(viewModel.limitReached) { _ in
-                    triggerErrorAnimation()
-                }
-        }
+        RollingNumberText(value: viewModel.counter)
+            .font(.system(size: 42, weight: .bold))
+            .shake(trigger: showErrorAnimation)
+            .sensoryFeedback(.error, trigger: showErrorAnimation)
+            .onReceive(viewModel.limitReached) { _ in
+                triggerErrorAnimation()
+            }
+            .frame(
+                width: counterSize.width,
+                height: counterSize.height
+            )
+            .knockout(.primaryForeground, in: RoundedRectangle(cornerRadius: 12))
     }
 
     private var controlBlock: some View {
@@ -112,15 +101,11 @@ struct CounterView: View {
             Label { Text(label) } icon: { Image(systemName: imageSystemName) }
                 .labelStyle(.titleAndIcon)
                 .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(.primaryBackground)
                 .frame(
                     width: counterSize.width,
                     height: buttonSize.height
                 )
-                .background(
-                    .primaryForeground,
-                    in: RoundedRectangle(cornerRadius: 12)
-                )
+                .knockout(.primaryForeground, in: RoundedRectangle(cornerRadius: 12))
         }
     }
 

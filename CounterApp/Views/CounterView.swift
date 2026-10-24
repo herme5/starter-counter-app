@@ -137,6 +137,6 @@ struct CounterView: View {
         counterMax: 1000,
         counterStep: 100
     )
-    let counterViewModel = CounterViewModel(settingsStore: .inMemory(settings))
+    let counterViewModel = CounterViewModel(settingsStore: .inMemory(initialValue: settings))
     CounterView(viewModel: counterViewModel)
 }

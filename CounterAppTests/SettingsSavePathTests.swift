@@ -7,7 +7,7 @@ import Foundation
 import Testing
 @testable import CounterApp
 
-/// Exercises the real wiring: AppFactory, SettingsStore over UserDefaults, settings and counter ViewModels.
+/// Exercises the real wiring: AppContainer, SettingsStore over UserDefaults, settings and counter ViewModels.
 @Suite("Settings save path")
 final class SettingsSavePathTests {
     private let suiteName = "CounterAppTests.\(UUID().uuidString)"
@@ -17,7 +17,7 @@ final class SettingsSavePathTests {
 
     init() {
         defaults = UserDefaults(suiteName: suiteName)!
-        settingsStore = .userDefaults(defaults)
+        settingsStore = .userDefaults(defaults: defaults)
         mainViewModel = AppContainer(settingsStore: settingsStore).makeMainViewModel()
     }
 
@@ -33,7 +33,7 @@ final class SettingsSavePathTests {
     /// What a fresh launch would read from UserDefaults, once pending writes are done.
     private func persistedSettings() async throws -> Settings? {
         await settingsStore.flush()
-        return try await UserDefaultsSettingsRepository(defaults: defaults).load()
+        return try await UserDefaultsRepository<Settings>(key: AppContainer.settingsKey, defaults: defaults).load()
     }
 
     @Test func validEditIsPersistedAndReachesTheCounter() async throws {
@@ -72,11 +72,11 @@ final class SettingsSavePathTests {
 
     @Test func persistedSettingsReachTheCounterAtLaunch() async throws {
         let saved = Settings(counterMin: 3, counterMax: 30, counterStep: 3)
-        try await UserDefaultsSettingsRepository(defaults: defaults).save(saved)
-        let appFactory = AppContainer(settingsStore: .userDefaults(defaults))
-        let counter = appFactory.makeMainViewModel().counterViewModel
+        try await UserDefaultsRepository<Settings>(key: AppContainer.settingsKey, defaults: defaults).save(saved)
+        let container = AppContainer(settingsStore: .userDefaults(defaults: defaults))
+        let counter = container.makeMainViewModel().counterViewModel
 
-        await appFactory.restore()
+        await container.restore()
 
         #expect(counter.counter == 3)
     }

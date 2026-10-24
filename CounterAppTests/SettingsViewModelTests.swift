@@ -9,7 +9,7 @@ import Testing
 @Suite("SettingsViewModel")
 struct SettingsViewModelTests {
     private func makeSUT() -> (SettingsViewModel, SettingsStore) {
-        let store = SettingsStore.inMemory(Settings(counterMin: 0, counterMax: 10, counterStep: 1))
+        let store = SettingsStore.inMemory(initialValue: Settings(counterMin: 0, counterMax: 10, counterStep: 1))
         return (SettingsViewModel(settingsStore: store), store)
     }
 
@@ -28,7 +28,7 @@ struct SettingsViewModelTests {
 
         sut.draft.counterMax = 50
 
-        #expect(store.settings.counterMax == 50)
+        #expect(store.value.counterMax == 50)
     }
 
     @Test func invalidRangeShowsMessageAndIsNotSaved() {
@@ -38,7 +38,7 @@ struct SettingsViewModelTests {
 
         #expect(sut.rangeErrorMessage != nil)
         #expect(sut.stepErrorMessage == nil)
-        #expect(store.settings.counterMin == 0)
+        #expect(store.value.counterMin == 0)
     }
 
     @Test func invalidStepShowsMessageAndIsNotSaved() {
@@ -48,7 +48,7 @@ struct SettingsViewModelTests {
 
         #expect(sut.stepErrorMessage != nil)
         #expect(sut.rangeErrorMessage == nil)
-        #expect(store.settings.counterStep == 1)
+        #expect(store.value.counterStep == 1)
     }
 
     @Test func messagesClearIndependently() {
@@ -66,7 +66,7 @@ struct SettingsViewModelTests {
         sut.draft.counterMax = 30
 
         #expect(sut.rangeErrorMessage == nil)
-        #expect(store.settings == Settings(counterMin: 20, counterMax: 30, counterStep: 2))
+        #expect(store.value == Settings(counterMin: 20, counterMax: 30, counterStep: 2))
     }
 
     @Test func validDraftCanBeDismissed() {
@@ -92,6 +92,6 @@ struct SettingsViewModelTests {
         sut.discardInvalidChanges()
 
         #expect(sut.draft == Settings(counterMin: 0, counterMax: 50, counterStep: 1))
-        #expect(sut.draft == store.settings)
+        #expect(sut.draft == store.value)
     }
 }

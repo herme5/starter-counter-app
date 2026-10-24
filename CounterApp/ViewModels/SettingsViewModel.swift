@@ -25,7 +25,7 @@ final class SettingsViewModel: Identifiable {
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
-        self.draft = settingsStore.settings
+        self.draft = settingsStore.value
     }
 
     /// Whether the settings can close now. Otherwise presents the discard alert.
@@ -39,7 +39,7 @@ final class SettingsViewModel: Identifiable {
 
     /// Drops the invalid edits and goes back to the last valid settings, which are already saved.
     func discardInvalidChanges() {
-        draft = settingsStore.settings
+        draft = settingsStore.value
     }
 
     private func save() {

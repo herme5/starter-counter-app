@@ -9,6 +9,10 @@ import Foundation
 ///
 /// Create one per app, or one per test or preview with its own `SettingsStore`.
 final class AppContainer {
+    /// The `UserDefaults` key the settings are stored under.
+    static let settingsKey = "settings"
+
+    /// The settings store shared by every ViewModel this container builds, so they all see the same settings.
     private let settingsStore: SettingsStore
 
     init(settingsStore: SettingsStore = .userDefaults()) {
@@ -23,13 +27,11 @@ final class AppContainer {
 
 // MARK: - View Models
 
-extension AppContainer {
+extension AppContainer: ViewModelFactory {
     func makeMainViewModel() -> MainViewModel {
         MainViewModel(factory: self)
     }
-}
 
-extension AppContainer: ViewModelFactory {
     func makeCounterViewModel() -> CounterViewModel {
         CounterViewModel(settingsStore: settingsStore)
     }
@@ -41,19 +43,33 @@ extension AppContainer: ViewModelFactory {
 
 // MARK: - Stores
 
+typealias SettingsStore = Store<Settings>
+
+/// The app's ways to build a settings store. They pick the settings' defaults and storage key,
+/// so call sites only choose where the settings live.
 extension SettingsStore {
-    /// A store that starts with `settings` and keeps every change in memory.
-    static func inMemory(_ settings: Settings = Settings()) -> SettingsStore {
-        SettingsStore(
-            repository: InMemorySettingsRepository(settings: settings),
-            initialSettings: settings
+    /// A settings store that starts with `initialValue` and keeps every change in memory.
+    static func inMemory(
+        initialValue: Settings = Settings()
+    ) -> SettingsStore {
+        Store(
+            initialValue: initialValue,
+            repository: InMemoryRepository(initialValue)
         )
     }
 
-    /// A store that loads from and persists to `defaults`.
-    static func userDefaults(_ defaults: UserDefaults = .standard) -> SettingsStore {
-        SettingsStore(
-            repository: UserDefaultsSettingsRepository(defaults: defaults)
+    /// A settings store that starts with `initialValue`, then loads from and persists to `defaults`
+    /// under `AppContainer.settingsKey`.
+    static func userDefaults(
+        initialValue: Settings = Settings(),
+        defaults: UserDefaults = .standard
+    ) -> SettingsStore {
+        Store(
+            initialValue: initialValue,
+            repository: UserDefaultsRepository(
+                key: AppContainer.settingsKey,
+                defaults: defaults
+            )
         )
     }
 }

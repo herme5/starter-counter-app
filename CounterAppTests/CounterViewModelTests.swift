@@ -12,7 +12,7 @@ struct CounterViewModelTests {
     private func makeSUT(
         min: Int = 0, max: Int = 10, step: Int = 3
     ) -> (CounterViewModel, SettingsStore) {
-        let store = SettingsStore.inMemory(Settings(counterMin: min, counterMax: max, counterStep: step))
+        let store = SettingsStore.inMemory(initialValue: Settings(counterMin: min, counterMax: max, counterStep: step))
         return (CounterViewModel(settingsStore: store), store)
     }
 

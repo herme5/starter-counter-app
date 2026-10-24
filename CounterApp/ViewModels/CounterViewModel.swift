@@ -21,10 +21,10 @@ final class CounterViewModel {
     @ObservationIgnored private var cancellables = Set<AnyCancellable>()
 
     init(settingsStore: SettingsStore) {
-        self.settings = settingsStore.settings
-        self.counter = settingsStore.settings.counterMin
+        self.settings = settingsStore.value
+        self.counter = settingsStore.value.counterMin
 
-        settingsStore.settingsPublisher
+        settingsStore.publisher
             .removeDuplicates()
             .dropFirst()
             .sink { [weak self] settings in self?.apply(settings) }

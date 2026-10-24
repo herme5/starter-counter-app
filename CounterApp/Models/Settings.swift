@@ -10,7 +10,7 @@ enum SettingsError: Error, Hashable {
     case invalidStep
 }
 
-struct Settings: Codable, Equatable {
+struct Settings: Codable, Equatable, Validatable {
     var counterMin: Int = 0
     var counterMax: Int = 10
     var counterStep: Int = 1
@@ -22,8 +22,6 @@ struct Settings: Codable, Equatable {
         if counterStep <= 0 { errors.insert(.invalidStep) }
         return errors
     }
-
-    var isValid: Bool { validationErrors.isEmpty }
 
     func validate() throws(SettingsError) {
         if validationErrors.contains(.invalidRange) { throw .invalidRange }

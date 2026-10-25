@@ -5,25 +5,26 @@
 
 import Foundation
 
-enum SettingsError: Error {
+enum SettingsError: Error, Hashable {
     case invalidRange
     case invalidStep
 }
 
-struct Settings: Codable, Equatable {
+struct Settings: Codable, Equatable, Validatable {
     var counterMin: Int = 0
     var counterMax: Int = 10
     var counterStep: Int = 1
 
-    var isValid: Bool {
-        let result = try? validate()
-        return result ?? false
+    /// Every rule the settings currently break, so each one can be reported on its own.
+    var validationErrors: Set<SettingsError> {
+        var errors = Set<SettingsError>()
+        if counterMin >= counterMax { errors.insert(.invalidRange) }
+        if counterStep <= 0 { errors.insert(.invalidStep) }
+        return errors
     }
 
-    @discardableResult
-    func validate() throws(SettingsError) -> Bool {
-        guard counterMin < counterMax else { throw .invalidRange }
-        guard counterStep > 0 else { throw .invalidStep }
-        return true
+    func validate() throws(SettingsError) {
+        if validationErrors.contains(.invalidRange) { throw .invalidRange }
+        if validationErrors.contains(.invalidStep) { throw .invalidStep }
     }
 }

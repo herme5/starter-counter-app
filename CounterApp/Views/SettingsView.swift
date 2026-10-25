@@ -5,34 +5,55 @@
 
 import SwiftUI
 
-
 struct SettingsView: View {
     enum Field: Hashable {
         case minimumValue, maximumValue, incrementStep
+
+        var title: LocalizedStringResource {
+            switch self {
+            case .minimumValue: "Minimum value"
+            case .maximumValue: "Maximum value"
+            case .incrementStep: "Increment step"
+            }
+        }
+
+        var placeholder: LocalizedStringResource {
+            switch self {
+            case .minimumValue: "Min"
+            case .maximumValue: "Max"
+            case .incrementStep: "Step"
+            }
+        }
+
+        /// The setting this field edits.
+        var keyPath: WritableKeyPath<Settings, Int> {
+            switch self {
+            case .minimumValue: \.counterMin
+            case .maximumValue: \.counterMax
+            case .incrementStep: \.counterStep
+            }
+        }
     }
 
-    @StateObject var viewModel: SettingsViewModel
+    private let keyboardItemHSpacing: CGFloat = 16
+    private let keyboardItemBottomSpace: CGFloat = 12
+    private let keyboardItemBarHeight: CGFloat = 44
+
+    @Environment(\.dismiss) private var dismiss
+    @Bindable private var viewModel: SettingsViewModel
     @FocusState private var focusedField: Field?
 
+    init(viewModel: SettingsViewModel) {
+        self.viewModel = viewModel
+    }
+
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(
                     content: {
-                        HStack {
-                            Text("Minimum value")
-                            TextField("Min", value: $viewModel.counterMin, formatter: NumberFormatter())
-                                .keyboardType(.numberPad)
-                                .multilineTextAlignment(.trailing)
-                                .focused($focusedField, equals: .minimumValue)
-                        }
-                        HStack {
-                            Text("Maximum value")
-                            TextField("Max", value: $viewModel.counterMax, formatter: NumberFormatter())
-                                .keyboardType(.numberPad)
-                                .multilineTextAlignment(.trailing)
-                                .focused($focusedField, equals: .maximumValue)
-                        }
+                        numberRow(.minimumValue)
+                        numberRow(.maximumValue)
                     },
                     header: { Text("Range") },
                     footer: {
@@ -44,13 +65,7 @@ struct SettingsView: View {
 
                 Section(
                     content: {
-                        HStack {
-                            Text("Increment step")
-                            TextField("Step", value: $viewModel.counterStep, formatter: NumberFormatter())
-                                .keyboardType(.numberPad)
-                                .multilineTextAlignment(.trailing)
-                                .focused($focusedField, equals: .incrementStep)
-                        }
+                        numberRow(.incrementStep)
                     },
                     header: { Text("Increment") },
                     footer: {
@@ -63,63 +78,76 @@ struct SettingsView: View {
             .animation(.default, value: viewModel.rangeErrorMessage)
             .animation(.default, value: viewModel.stepErrorMessage)
             .navigationTitle("Settings")
+            .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    keyboardItemGroup
-                        .background(.bar.opacity(0.5), in: .capsule)
-                        .glassEffect()
-                        .padding(.bottom, 20)
-                }.sharedBackgroundVisibility(.hidden)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(role: .confirm) {
+                        if viewModel.requestDismiss() { dismiss() }
+                    }
+                }
             }
+            .interactiveDismissDisabled(!viewModel.draft.isValid)
+            .alert("Invalid Settings", isPresented: $viewModel.isDiscardAlertPresented) {
+                Button("Keep Editing", role: .cancel) {}
+                Button("Discard Invalid Changes", role: .destructive) {
+                    viewModel.discardInvalidChanges()
+                    dismiss()
+                }
+            } message: {
+                Text("Some values are invalid. Discard them and keep the last valid settings?")
+            }
+            .safeAreaInset(edge: .bottom) {
+                if focusedField != nil {
+                    keyboardItemGroup
+                        .padding(.bottom, keyboardItemBottomSpace)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(.default, value: focusedField)
         }
     }
 
-    var keyboardItemGroup: some View {
-        HStack(spacing: 20) {
-            Spacer()
-
-            Button(action: {
-                switch focusedField {
-                case .minimumValue:
-                    viewModel.counterMin += 1
-                case .maximumValue:
-                    viewModel.counterMax += 1
-                case .incrementStep:
-                    viewModel.counterStep += 1
-                case nil: break
-                }
-            }) {
-                Image(systemName: "plus")
-            }
-            .foregroundStyle(.primaryForeground)
-
-            Button(action: {
-                switch focusedField {
-                case .minimumValue:
-                    viewModel.counterMin -= 1
-                case .maximumValue:
-                    viewModel.counterMax -= 1
-                case .incrementStep:
-                    viewModel.counterStep -= 1
-                case nil: break
-                }
-            }) {
-                Image(systemName: "minus")
-            }
-            .foregroundStyle(.primaryForeground)
-
-            Button(action: {
-                focusedField = nil
-            }) {
-                Image(systemName: "checkmark")
-            }
-            .foregroundStyle(.primaryForeground)
+    private var keyboardItemGroup: some View {
+        HStack(spacing: keyboardItemHSpacing) {
+            keyboardItem("Increase value", systemImage: "plus") { adjustFocusedField(by: 1) }
+            keyboardItem("Decrease value", systemImage: "minus") { adjustFocusedField(by: -1) }
+            keyboardItem("Hide keyboard", systemImage: "keyboard.chevron.compact.down") { focusedField = nil }
         }
-        .padding(8)
+        .padding(.horizontal, keyboardItemHSpacing)
+        .foregroundStyle(.primaryForeground)
+        .glassEffect()
+    }
+
+    private func keyboardItem(
+        _ title: LocalizedStringResource,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label { Text(title) } icon: { Image(systemName: systemImage) }
+                .labelStyle(.iconOnly)
+                .frame(height: keyboardItemBarHeight)
+        }
+    }
+
+    private func numberRow(_ field: Field) -> some View {
+        HStack {
+            Text(field.title)
+            TextField(field.placeholder, value: $viewModel.draft[dynamicMember: field.keyPath], format: .number)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.trailing)
+                .focused($focusedField, equals: field)
+        }
+        .contentShape(.rect)
+        .onTapGesture { focusedField = field }
+    }
+
+    private func adjustFocusedField(by delta: Int) {
+        guard let keyPath = focusedField?.keyPath else { return }
+        viewModel.draft[keyPath: keyPath] += delta
     }
 }
 
 #Preview {
-    let appFactory = AppFactory()
-    SettingsView(viewModel: appFactory.settingsViewModel)
+    SettingsView(viewModel: SettingsViewModel(settingsStore: .inMemory()))
 }

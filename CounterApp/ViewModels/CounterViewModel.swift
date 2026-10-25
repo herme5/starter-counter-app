@@ -5,55 +5,59 @@
 
 import Combine
 import Foundation
+import Observation
 
-class CounterViewModel: ObservableObject {
-    enum CounterError: Error { case maximumOverflow, minimumOverflow }
+@Observable
+final class CounterViewModel {
+    enum CounterLimit { case maximum, minimum }
 
-    @Published var counter: Int
-    let overflowError = Signal<CounterError>()
+    private(set) var counter: Int
+    @ObservationIgnored @Event<CounterLimit> var limitReached
 
     private var settings: Settings
-    private var cancellables = Set<AnyCancellable>()
     private var counterStep: Int { settings.counterStep }
     private var counterMin: Int { settings.counterMin }
     private var counterMax: Int { settings.counterMax }
+    @ObservationIgnored private var cancellables = Set<AnyCancellable>()
 
-    init(settingsStore: any Store<Settings>) {
-        self.settings = settingsStore.object
-        self.counter = settingsStore.object.counterMin
+    init(settingsStore: SettingsStore) {
+        self.settings = settingsStore.value
+        self.counter = settingsStore.value.counterMin
 
-        settingsStore.objectPublisher
-            .filter(\.isValid)
-            .sink(receiveValue: onNewSettingsReceived)
+        settingsStore.publisher
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] settings in self?.apply(settings) }
             .store(in: &cancellables)
-    }
-
-    func onNewSettingsReceived(_ settings: Settings) {
-        self.settings = settings
-        self.counter = settings.counterMin
     }
 
     func increment() {
         guard counter < counterMax else {
-            overflowError.send(.maximumOverflow)
+            _limitReached.send(.maximum)
             return
         }
 
         let delta = min(counterStep, counterMax - counter)
         counter += delta
     }
-    
+
     func decrement() {
         guard counter > counterMin else {
-            overflowError.send(.minimumOverflow)
+            _limitReached.send(.minimum)
             return
         }
 
         let delta = min(counterStep, counter - counterMin)
         counter -= delta
     }
-    
+
     func reset() {
         counter = counterMin
+    }
+
+    /// Keeps the current value when it still fits, otherwise clamps it into the new range.
+    private func apply(_ settings: Settings) {
+        self.settings = settings
+        counter = min(max(counter, counterMin), counterMax)
     }
 }

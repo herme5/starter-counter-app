@@ -43,7 +43,7 @@ struct CounterView: View {
             .font(.system(size: 42, weight: .bold))
             .shake(trigger: showErrorAnimation)
             .sensoryFeedback(.error, trigger: showErrorAnimation)
-            .onReceive(viewModel.limitReached) { _ in
+            .onReceive(viewModel.$limitReached) { _ in
                 triggerErrorAnimation()
             }
             .frame(

@@ -7,16 +7,20 @@ import Combine
 
 /// A fire-and-forget event: each `send` reaches the current subscribers, nothing is stored.
 ///
-/// Only the owning type can send, through the private backing storage (`_name.send(...)`).
-/// Everyone else sees a read-only publisher. Inside an `@Observable` type, mark the property
-/// `@ObservationIgnored`, as for any property wrapper.
+/// Like `@Published`, the publisher is the projected value (`$name`). Only the owning type can
+/// send, through the private backing storage (`_name.send(...)`). Inside an `@Observable` type,
+/// mark the property `@ObservationIgnored`, as for any property wrapper.
 @propertyWrapper
 struct Event<Value> {
+    /// An event has no value: subscribe to its projected publisher (`$name`) instead.
+    struct NoValue {}
+
     private let subject = PassthroughSubject<Value, Never>()
-    let wrappedValue: AnyPublisher<Value, Never>
+    let projectedValue: AnyPublisher<Value, Never>
+    var wrappedValue: NoValue { NoValue() }
 
     init() {
-        wrappedValue = subject.eraseToAnyPublisher()
+        projectedValue = subject.eraseToAnyPublisher()
     }
 
     func send(_ value: Value) {

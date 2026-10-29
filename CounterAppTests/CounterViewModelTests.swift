@@ -20,7 +20,7 @@ struct CounterViewModelTests {
         of sut: CounterViewModel, during action: () -> Void
     ) -> [CounterViewModel.CounterLimit] {
         var received: [CounterViewModel.CounterLimit] = []
-        let subscription = sut.limitReached.sink { received.append($0) }
+        let subscription = sut.$limitReached.sink { received.append($0) }
         action()
         subscription.cancel()
         return received
